@@ -17,7 +17,7 @@
 - [x] **Tarefa: API de Listagem de Containers** (2739ae0)
   - **Escrever Testes:** Validar o retorno da lista de containers e status.
   - **Implementar:** Endpoint API para buscar containers.
-- [ ] **Tarefa: Interface do Dashboard (Tabela de Ativos)**
+- [x] **Tarefa: Interface do Dashboard (Tabela de Ativos)** (d1b4365)
   - **Escrever Testes:** Validar renderização da tabela no frontend.
   - **Implementar:** Criar tabelas compactas usando Tailwind CSS para exibir o inventário.
 - [ ] **Tarefa: Conductor - User Manual Verification 'Dashboard e Inventário' (Protocol in workflow.md)**
