@@ -8,7 +8,7 @@ const customJestConfig = {
   coverageProvider: 'v8',
   testEnvironment: 'jest-environment-jsdom',
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/',
+    '^@/(.*)$': '<rootDir>/src/$1',
   },
 }
 
