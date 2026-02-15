@@ -22,7 +22,7 @@
   - **Implementar:** Criar tabelas compactas usando Tailwind CSS para exibir o inventário.
 - [x] **Tarefa: Conductor - User Manual Verification 'Dashboard e Inventário' (Protocol in workflow.md)** (8a214e0)
 
-## Fase 3: Varredura de Disco Profunda e Gerenciamento de Volumes/Logs
+## Fase 3: Varredura de Disco Profunda e Gerenciamento de Volumes/Logs [checkpoint: 2bc1f67]
 
 - [x] **Tarefa: API de Inventário de Volumes** (3eab502)
   - **Escrever Testes:** Validar listagem de volumes e detecção de volumes órfãos.
@@ -35,6 +35,6 @@
   - **Implementar:** Serviço para executar `du -sh` em pastas críticas (`/var/log`, `/tmp`, `/var/cache`).
 - [x] **Tarefa: CRUD de Limpeza (Volumes e Logs)** (2afa502)
   - **Implementar:** Botões para remover volumes órfãos e truncar logs de containers.
-- [~] **Tarefa: Expansão da Varredura (Cache, APT e Journal)**
+- [x] **Tarefa: Expansão da Varredura (Cache, APT e Journal)** (2bc1f67)
   - **Implementar:** Monitoramento de Build Cache do Docker, Journal do Sistema e diretórios do APT.
 - [ ] **Tarefa: Conductor - User Manual Verification 'Limpeza e Varredura' (Protocol in workflow.md)**
