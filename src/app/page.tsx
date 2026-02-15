@@ -256,6 +256,8 @@ export default function Home() {
             <div className="space-y-4">
               {loading ? (
                 <p className="text-xs text-zinc-500">Analisando...</p>
+              ) : systemScan.length === 0 ? (
+                <p className="text-xs text-zinc-500 italic">Nenhum dado de varredura disponível.</p>
               ) : systemScan.map((s) => (
                 <div key={s.path} className="flex flex-col gap-1">
                   <div className="flex justify-between text-xs">

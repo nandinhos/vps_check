@@ -1,7 +1,4 @@
 import { exec } from 'child_process';
-import { promisify } from 'util';
-
-const execPromise = promisify(exec);
 
 export interface DiskUsage {
   path: string;
@@ -26,18 +23,33 @@ export async function scanDiskUsage(): Promise<DiskUsage[]> {
 
   for (const path of pathsToScan) {
     try {
-      // Usamos -s para summary e -b para bytes para facilitar o parsing
-      const { stdout } = await execPromise(`du -sb ${path}`);
-      const [sizeStr] = stdout.split('	');
-      const size = parseInt(sizeStr);
-      
-      results.push({
-        path,
-        size,
-        formattedSize: formatSize(size),
+      // Usamos exec para capturar stdout mesmo em caso de erro (ex: exit code 1 por permissão em subpastas)
+      const result = await new Promise<{ stdout: string; stderr: string }>((resolve) => {
+        exec(`du -sb ${path}`, (error, stdout, stderr) => {
+          resolve({ 
+            stdout: stdout ? String(stdout) : '', 
+            stderr: stderr ? String(stderr) : '' 
+          });
+        });
       });
+
+      if (result.stdout && result.stdout.trim().length > 0) {
+        // O formato do du -b é "tamanho\tcaminho"
+        const parts = result.stdout.split(/\s+/);
+        if (parts.length > 0) {
+          const size = parseInt(parts[0]);
+          
+          if (!isNaN(size)) {
+            results.push({
+              path,
+              size,
+              formattedSize: formatSize(size),
+            });
+          }
+        }
+      }
     } catch (error) {
-      console.error(`Erro ao escanear ${path}:`, error);
+      console.error(`Erro inesperado ao escanear ${path}:`, error);
     }
   }
 
