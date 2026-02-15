@@ -27,7 +27,7 @@
 - [x] **Tarefa: API de Inventário de Volumes** (3eab502)
   - **Escrever Testes:** Validar listagem de volumes e detecção de volumes órfãos.
   - **Implementar:** Endpoint para listar volumes e seu uso estimado de disco.
-- [ ] **Tarefa: API de Analise de Logs de Containers**
+- [x] **Tarefa: API de Analise de Logs de Containers** (ae2428b)
   - **Escrever Testes:** Validar cálculo de tamanho de arquivos de log no `/var/lib/docker/containers`.
   - **Implementar:** Endpoint para identificar containers com logs excessivos.
 - [ ] **Tarefa: Ferramenta de Varredura de Disco do Sistema**
