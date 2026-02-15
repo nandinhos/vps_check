@@ -2,7 +2,7 @@
 
 ## Fase 1: Setup do Projeto e Conectividade Docker
 
-- [~] **Tarefa: Inicialização do Projeto Next.js**
+- [x] **Tarefa: Inicialização do Projeto Next.js** (190fa0c)
   - Configurar scaffold inicial com Next.js, TypeScript e Tailwind CSS.
 - [ ] **Tarefa: Configuração do Backend e Docker SDK**
   - **Escrever Testes:** Validar a conexão com o Docker SDK.
