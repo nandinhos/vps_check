@@ -26,6 +26,8 @@ describe('Docker Service', () => {
       expect(images[0]).toHaveProperty('id');
       expect(images[0]).toHaveProperty('name');
       expect(images[0]).toHaveProperty('size');
+      expect(images[0]).toHaveProperty('isDangling');
+      expect(images[0]).toHaveProperty('inUse');
       expect(typeof images[0].size).toBe('number');
     }
   });
@@ -39,6 +41,7 @@ describe('Docker Service', () => {
       expect(containers[0]).toHaveProperty('id');
       expect(containers[0]).toHaveProperty('name');
       expect(containers[0]).toHaveProperty('image');
+      expect(containers[0]).toHaveProperty('imageId');
       expect(containers[0]).toHaveProperty('status');
       expect(containers[0]).toHaveProperty('state');
     }

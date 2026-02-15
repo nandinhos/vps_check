@@ -9,7 +9,7 @@
   - **Implementar:** Criar o serviço de conexão com o Docker Engine.
 - [x] **Tarefa: Conductor - User Manual Verification 'Setup e Conectividade' (Protocol in workflow.md)** (918a674)
 
-## Fase 2: API de Inventário e Dashboard Base
+## Fase 2: API de Inventário e Dashboard Base [checkpoint: 8a214e0]
 
 - [x] **Tarefa: API de Listagem de Imagens** (7adfd37)
   - **Escrever Testes:** Validar o retorno da lista de imagens com tamanhos.
@@ -20,7 +20,7 @@
 - [x] **Tarefa: Interface do Dashboard (Tabela de Ativos)** (d1b4365)
   - **Escrever Testes:** Validar renderização da tabela no frontend.
   - **Implementar:** Criar tabelas compactas usando Tailwind CSS para exibir o inventário.
-- [~] **Tarefa: Conductor - User Manual Verification 'Dashboard e Inventário' (Protocol in workflow.md)**
+- [x] **Tarefa: Conductor - User Manual Verification 'Dashboard e Inventário' (Protocol in workflow.md)** (8a214e0)
 
 ## Fase 3: Varredura de Disco Profunda e Gerenciamento de Volumes/Logs
 

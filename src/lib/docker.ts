@@ -19,12 +19,15 @@ export interface DockerImage {
   size: number;
   created: number;
   tag: string;
+  isDangling: boolean;
+  inUse: boolean;
 }
 
 export interface DockerContainer {
   id: string;
   name: string;
   image: string;
+  imageId: string;
   status: string;
   state: string;
   created: number;
@@ -35,14 +38,21 @@ export interface DockerContainer {
  */
 export async function listImages(): Promise<DockerImage[]> {
   const dockerInstance = getDockerInstance();
-  const images = await dockerInstance.listImages();
+  const [images, containers] = await Promise.all([
+    dockerInstance.listImages({ all: true }),
+    dockerInstance.listContainers({ all: true }),
+  ]);
+
+  const usedImageIds = new Set(containers.map((c) => c.ImageID));
 
   return images.map((img) => ({
     id: img.Id,
     name: img.RepoTags?.[0] || '<none>',
     size: img.Size,
     created: img.Created,
-    tag: img.RepoTags?.[0]?.split(':')[1] || 'latest',
+    tag: img.RepoTags?.[0]?.split(':')[1] || '<none>',
+    isDangling: img.RepoTags === null || img.RepoTags?.[0] === '<none>:<none>',
+    inUse: usedImageIds.has(img.Id),
   }));
 }
 
@@ -57,8 +67,18 @@ export async function listContainers(): Promise<DockerContainer[]> {
     id: container.Id,
     name: container.Names[0].replace(/^\//, ''),
     image: container.Image,
+    imageId: container.ImageID,
     status: container.Status,
     state: container.State,
     created: container.Created,
   }));
+}
+
+/**
+ * Remove uma imagem do Docker.
+ */
+export async function removeImage(id: string): Promise<void> {
+  const dockerInstance = getDockerInstance();
+  const image = dockerInstance.getImage(id);
+  await image.remove();
 }
