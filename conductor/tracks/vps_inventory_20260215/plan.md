@@ -30,7 +30,7 @@
 - [x] **Tarefa: API de Analise de Logs de Containers** (ae2428b)
   - **Escrever Testes:** Validar cálculo de tamanho de arquivos de log no `/var/lib/docker/containers`.
   - **Implementar:** Endpoint para identificar containers com logs excessivos.
-- [ ] **Tarefa: Ferramenta de Varredura de Disco do Sistema**
+- [x] **Tarefa: Ferramenta de Varredura de Disco do Sistema** (df716b3)
   - **Escrever Testes:** Validar identificação de diretórios grandes (fora do Docker).
   - **Implementar:** Serviço para executar `du -sh` em pastas críticas (`/var/log`, `/tmp`, `/var/cache`).
 - [ ] **Tarefa: CRUD de Limpeza (Volumes e Logs)**
