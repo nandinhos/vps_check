@@ -11,7 +11,7 @@
 
 ## Fase 2: API de Inventário e Dashboard Base
 
-- [ ] **Tarefa: API de Listagem de Imagens**
+- [x] **Tarefa: API de Listagem de Imagens** (7adfd37)
   - **Escrever Testes:** Validar o retorno da lista de imagens com tamanhos.
   - **Implementar:** Endpoint API para buscar imagens via SDK.
 - [ ] **Tarefa: API de Listagem de Containers**
