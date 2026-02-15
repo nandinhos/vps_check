@@ -1,0 +1,14 @@
+services:
+  vps-manager:
+    build: .
+    container_name: vps-manager
+    user: "root"
+    ports:
+      - "45000:3000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /:/hostfs:ro
+    restart: always
+    environment:
+      - PORT=3000
+      - NODE_ENV=production

@@ -18,16 +18,16 @@ export async function scanDiskUsage(): Promise<DiskUsage[]> {
     '/tmp',
     '/var/lib/docker/volumes',
     '/var/lib/docker/overlay2',
-    '/home/devuser',
-    '/home/devuser/.cache',
+    '/home/nandodev',
   ];
 
   const results: DiskUsage[] = [];
 
   for (const path of pathsToScan) {
+    const hostPath = `/hostfs${path}`;
     try {
       const result = await new Promise<{ stdout: string }>((resolve) => {
-        exec(`sudo du -sb ${path}`, (error, stdout) => {
+        exec(`du -sb ${hostPath}`, (error, stdout) => {
           resolve({ stdout: stdout ? String(stdout) : '' });
         });
       });
@@ -66,16 +66,54 @@ export async function scanDiskUsage(): Promise<DiskUsage[]> {
 }
 
 /**
+ * Explora um diretório específico para listar subdiretórios e arquivos.
+ */
+export async function exploreDirectory(path: string): Promise<DiskUsage[]> {
+  const hostPath = `/hostfs${path}`;
+  
+  return new Promise((resolve) => {
+    // Lista todos os itens (incluindo ocultos) e seus tamanhos (profundidade 1)
+    // find captura tudo e o du calcula o tamanho
+    exec(`find ${hostPath} -maxdepth 1 -not -path ${hostPath} -exec du -sb {} +`, (error, stdout) => {
+      if (!stdout) return resolve([]);
+      
+      const lines = stdout.trim().split('\n');
+      const results: DiskUsage[] = [];
+      
+      for (const line of lines) {
+        const parts = line.split(/\s+/);
+        if (parts.length >= 2) {
+          const size = parseInt(parts[0]);
+          const fullPath = parts.slice(1).join(' ');
+          const cleanPath = fullPath.replace('/hostfs', ''); // Volta para o path original
+          
+          results.push({
+            path: cleanPath,
+            size,
+            formattedSize: formatSize(size),
+          });
+        }
+      }
+      
+      // Ordena por tamanho decrescente
+      resolve(results.sort((a, b) => b.size - a.size).slice(0, 50)); // Limita aos 50 maiores
+    });
+  });
+}
+
+/**
  * Obtém o tamanho total do Build Cache do Docker.
  */
 async function getDockerBuildCacheSize(): Promise<number> {
   return new Promise((resolve) => {
-    // docker system df --format "{{.Size}}" --type build-cache pode retornar algo como "1.2GB"
-    // Usamos uma abordagem via shell para somar se necessário ou pegar o total
-    exec("docker system df --format '{{.Size}}' | head -n 1", (error, stdout) => {
+    exec("docker system df --type build-cache --format '{{.Size}}'", (error, stdout) => {
       if (error) return resolve(0);
-      const sizeStr = String(stdout).trim();
-      resolve(parseDockerSize(sizeStr));
+      const lines = String(stdout).trim().split('\n');
+      let total = 0;
+      for (const line of lines) {
+        total += parseDockerSize(line.trim());
+      }
+      resolve(total);
     });
   });
 }

@@ -9,7 +9,10 @@ export default function Home() {
   const [containers, setContainers] = useState<DockerContainer[]>([]);
   const [volumes, setVolumes] = useState<DockerVolume[]>([]);
   const [systemScan, setSystemScan] = useState<DiskUsage[]>([]);
+  const [exploredPath, setExploredPath] = useState<string | null>(null);
+  const [exploredData, setExploredData] = useState<DiskUsage[]>([]);
   const [loading, setLoading] = useState(true);
+  const [exploring, setExploring] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   async function fetchData() {
@@ -45,6 +48,25 @@ export default function Home() {
     const mb = bytes / (1024 * 1024);
     if (mb > 1024) return (mb / 1024).toFixed(2) + ' GB';
     return mb.toFixed(2) + ' MB';
+  };
+
+  const handleExplore = async (path: string) => {
+    if (exploredPath === path) {
+      setExploredPath(null);
+      return;
+    }
+    
+    setExploring(true);
+    setExploredPath(path);
+    try {
+      const res = await fetch(`/api/system/explore?path=${encodeURIComponent(path)}`);
+      const data = await res.json();
+      setExploredData(data);
+    } catch (error) {
+      console.error('Erro ao explorar:', error);
+    } finally {
+      setExploring(false);
+    }
   };
 
   const handleAction = async (id: string, url: string, method: string, confirmMsg: string) => {
@@ -109,8 +131,8 @@ export default function Home() {
                     <tr key={c.id} className="hover:bg-zinc-900/50 transition-colors">
                       <td className="px-4 py-2">
                         <div className="flex flex-col">
-                          <span className="font-medium">{c.name}</span>
-                          <span className="text-[10px] text-zinc-500 truncate max-w-[200px]">{c.image}</span>
+                          <span className="font-medium">{c.name || 'Sem nome'}</span>
+                          <span className="text-[10px] text-zinc-500 truncate max-w-[200px]">{c.image || 'N/A'}</span>
                         </div>
                       </td>
                       <td className="px-4 py-2">
@@ -165,8 +187,8 @@ export default function Home() {
                     <tr key={img.id} className="hover:bg-zinc-900/50 transition-colors">
                       <td className="px-4 py-2">
                         <div className="flex flex-col">
-                          <span className="font-medium">{img.name.split(':')[0]}</span>
-                          <span className="text-[10px] text-zinc-500 italic">{img.tag}</span>
+                          <span className="font-medium">{(img.name || 'Sem nome').split(':')[0]}</span>
+                          <span className="text-[10px] text-zinc-500 italic">{img.tag || 'N/A'}</span>
                         </div>
                       </td>
                       <td className="px-4 py-2 text-zinc-400">{formatSize(img.size)}</td>
@@ -260,13 +282,21 @@ export default function Home() {
                 <p className="text-xs text-zinc-500 italic">Nenhum dado de varredura disponível.</p>
               ) : systemScan.map((s) => (
                 <div key={s.path} className="flex flex-col gap-1">
-                  <div className="flex justify-between text-xs items-center">
-                    <span className="text-zinc-400 truncate max-w-[180px]">{s.path}</span>
+                  <div 
+                    className={`flex justify-between text-xs items-center p-1 rounded hover:bg-zinc-800/50 cursor-pointer transition-colors ${exploredPath === s.path ? 'bg-zinc-800/80' : ''}`}
+                    onClick={() => s.path !== 'Docker Build Cache' && handleExplore(s.path)}
+                  >
+                    <span className="text-zinc-400 truncate max-w-[180px] flex items-center gap-1">
+                      {s.path !== 'Docker Build Cache' && (
+                        <span className="text-[8px] opacity-50">{exploredPath === s.path ? '▼' : '▶'}</span>
+                      )}
+                      {s.path}
+                    </span>
                     <div className="flex items-center gap-2">
                       <span className="font-mono font-bold text-zinc-200">{s.formattedSize}</span>
                       {s.path === 'Docker Build Cache' && s.size > 0 && (
                         <button
-                          onClick={() => handleAction('build-cache', '/api/system/prune', 'POST', 'Limpar todo o Build Cache do Docker?')}
+                          onClick={(e) => { e.stopPropagation(); handleAction('build-cache', '/api/system/prune', 'POST', 'Limpar todo o Build Cache do Docker?'); }}
                           disabled={actionLoading === 'build-cache'}
                           className="text-[10px] text-red-500 hover:text-red-400 font-bold uppercase underline decoration-red-500/30 underline-offset-2"
                         >
@@ -275,6 +305,25 @@ export default function Home() {
                       )}
                     </div>
                   </div>
+                  
+                  {/* Detalhes da Exploração */}
+                  {exploredPath === s.path && (
+                    <div className="ml-4 mb-3 mt-1 border-l border-zinc-800 pl-3 space-y-1.5">
+                      {exploring ? (
+                        <p className="text-[10px] text-zinc-600 italic">Listando conteúdo...</p>
+                      ) : exploredData.length === 0 ? (
+                        <p className="text-[10px] text-zinc-600 italic">Pasta vazia ou sem permissão.</p>
+                      ) : exploredData.map((item) => (
+                        <div key={item.path} className="flex justify-between text-[10px]">
+                          <span className="text-zinc-500 truncate max-w-[150px]" title={item.path}>
+                            {item.path.split('/').pop() || item.path}
+                          </span>
+                          <span className="text-zinc-400 font-mono">{item.formattedSize}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                   <div className="w-full bg-zinc-800 rounded-full h-1">
                     <div 
                       className={`h-1 rounded-full ${s.size > 1024 * 1024 * 1024 ? 'bg-red-500' : 'bg-zinc-600'}`} 
@@ -286,8 +335,8 @@ export default function Home() {
             </div>
             <div className="mt-6 pt-4 border-t border-zinc-800">
               <p className="text-[10px] text-zinc-500 leading-relaxed">
-                * Nota: Algumas pastas podem exigir permissão de root para leitura completa.
-                O uso identificado em <code className="text-zinc-400">/home/devuser</code> costuma conter dados de aplicativos.
+                * Nota: Os valores refletem o uso real no Host. 
+                O diretório <code className="text-zinc-400">/home/nandodev</code> contém os dados do seu usuário e projetos.
               </p>
             </div>
           </section>
