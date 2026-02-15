@@ -4,7 +4,7 @@
 
 - [x] **Tarefa: Inicialização do Projeto Next.js** (190fa0c)
   - Configurar scaffold inicial com Next.js, TypeScript e Tailwind CSS.
-- [ ] **Tarefa: Configuração do Backend e Docker SDK**
+- [x] **Tarefa: Configuração do Backend e Docker SDK** (6548406)
   - **Escrever Testes:** Validar a conexão com o Docker SDK.
   - **Implementar:** Criar o serviço de conexão com o Docker Engine.
 - [ ] **Tarefa: Conductor - User Manual Verification 'Setup e Conectividade' (Protocol in workflow.md)**
