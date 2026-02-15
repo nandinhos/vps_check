@@ -1,8 +1,133 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { DockerImage, DockerContainer } from '@/lib/docker';
+
 export default function Home() {
+  const [images, setImages] = useState<DockerImage[]>([]);
+  const [containers, setContainers] = useState<DockerContainer[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [imgsRes, contsRes] = await Promise.all([
+          fetch('/api/images'),
+          fetch('/api/containers'),
+        ]);
+        
+        const imgs = await imgsRes.json();
+        const conts = await contsRes.json();
+        
+        setImages(imgs);
+        setContainers(conts);
+      } catch (error) {
+        console.error('Erro ao buscar dados:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
+  const formatSize = (bytes: number) => {
+    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+  };
+
   return (
-    <div style={{ background: 'white', color: 'black', padding: '20px', height: '100vh' }}>
-      <h1>Teste de Renderização</h1>
-      <p>Se você está vendo isso, o Next.js está funcionando.</p>
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-6 font-sans">
+      <header className="mb-8 border-b border-zinc-800 pb-4">
+        <h1 className="text-2xl font-bold tracking-tight">VPS Manager</h1>
+        <p className="text-zinc-400 text-sm">Inventário de Ativos Docker</p>
+      </header>
+
+      <main className="space-y-12">
+        {/* Seção de Containers */}
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+              Containers
+            </h2>
+            <span className="text-xs text-zinc-500">{containers.length} total</span>
+          </div>
+          
+          <div className="overflow-x-auto border border-zinc-800 rounded-lg">
+            <table className="w-full text-left text-sm border-collapse">
+              <thead className="bg-zinc-900 text-zinc-400 uppercase text-[10px] font-bold tracking-wider">
+                <tr>
+                  <th className="px-4 py-2 border-b border-zinc-800">Nome</th>
+                  <th className="px-4 py-2 border-b border-zinc-800">Imagem</th>
+                  <th className="px-4 py-2 border-b border-zinc-800">Status</th>
+                  <th className="px-4 py-2 border-b border-zinc-800">Estado</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-800">
+                {loading ? (
+                  <tr><td colSpan={4} className="px-4 py-8 text-center text-zinc-500">Carregando...</td></tr>
+                ) : containers.length === 0 ? (
+                  <tr><td colSpan={4} className="px-4 py-8 text-center text-zinc-500">Nenhum container encontrado</td></tr>
+                ) : (
+                  containers.map((c) => (
+                    <tr key={c.id} className="hover:bg-zinc-900/50 transition-colors">
+                      <td className="px-4 py-2 font-medium">{c.name}</td>
+                      <td className="px-4 py-2 text-zinc-400 truncate max-w-[200px]">{c.image}</td>
+                      <td className="px-4 py-2 text-xs">{c.status}</td>
+                      <td className="px-4 py-2">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                          c.state === 'running' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'
+                        }`}>
+                          {c.state}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {/* Seção de Imagens */}
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+              Imagens
+            </h2>
+            <span className="text-xs text-zinc-500">{images.length} total</span>
+          </div>
+
+          <div className="overflow-x-auto border border-zinc-800 rounded-lg">
+            <table className="w-full text-left text-sm border-collapse">
+              <thead className="bg-zinc-900 text-zinc-400 uppercase text-[10px] font-bold tracking-wider">
+                <tr>
+                  <th className="px-4 py-2 border-b border-zinc-800">Nome</th>
+                  <th className="px-4 py-2 border-b border-zinc-800">Tag</th>
+                  <th className="px-4 py-2 border-b border-zinc-800">Tamanho</th>
+                  <th className="px-4 py-2 border-b border-zinc-800">Criada</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-800">
+                {loading ? (
+                  <tr><td colSpan={4} className="px-4 py-8 text-center text-zinc-500">Carregando...</td></tr>
+                ) : images.length === 0 ? (
+                  <tr><td colSpan={4} className="px-4 py-8 text-center text-zinc-500">Nenhuma imagem encontrada</td></tr>
+                ) : (
+                  images.map((img) => (
+                    <tr key={img.id} className="hover:bg-zinc-900/50 transition-colors">
+                      <td className="px-4 py-2 font-medium">{img.name.split(':')[0]}</td>
+                      <td className="px-4 py-2 text-zinc-400"><code className="bg-zinc-800 px-1 rounded text-xs">{img.tag}</code></td>
+                      <td className="px-4 py-2 text-zinc-400">{formatSize(img.size)}</td>
+                      <td className="px-4 py-2 text-zinc-500 text-xs">{new Date(img.created * 1000).toLocaleDateString('pt-BR')}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
     </div>
   );
 }
