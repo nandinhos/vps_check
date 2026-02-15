@@ -46,4 +46,17 @@ describe('Docker Service', () => {
       expect(containers[0]).toHaveProperty('state');
     }
   });
+
+  it('deve retornar uma lista de volumes formatada', async () => {
+    const { listVolumes } = await import('./docker');
+    const volumes = await listVolumes();
+    
+    expect(Array.isArray(volumes)).toBe(true);
+    if (volumes.length > 0) {
+      expect(volumes[0]).toHaveProperty('name');
+      expect(volumes[0]).toHaveProperty('driver');
+      expect(volumes[0]).toHaveProperty('mountpoint');
+      expect(volumes[0]).toHaveProperty('inUse');
+    }
+  });
 });

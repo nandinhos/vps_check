@@ -33,6 +33,14 @@ export interface DockerContainer {
   created: number;
 }
 
+export interface DockerVolume {
+  name: string;
+  driver: string;
+  mountpoint: string;
+  inUse: boolean;
+  size?: number; // Tamanho em bytes, se disponível
+}
+
 /**
  * Lista todas as imagens Docker no sistema, formatadas.
  */
@@ -81,4 +89,31 @@ export async function removeImage(id: string): Promise<void> {
   const dockerInstance = getDockerInstance();
   const image = dockerInstance.getImage(id);
   await image.remove();
+}
+
+/**
+ * Lista todos os volumes Docker no sistema, formatados.
+ */
+export async function listVolumes(): Promise<DockerVolume[]> {
+  const dockerInstance = getDockerInstance();
+  const [volumesData, containers] = await Promise.all([
+    dockerInstance.listVolumes(),
+    dockerInstance.listContainers({ all: true }),
+  ]);
+
+  const usedVolumes = new Set();
+  containers.forEach((container) => {
+    container.Mounts.forEach((mount) => {
+      if (mount.Name) {
+        usedVolumes.add(mount.Name);
+      }
+    });
+  });
+
+  return (volumesData.Volumes || []).map((v) => ({
+    name: v.Name,
+    driver: v.Driver,
+    mountpoint: v.Mountpoint,
+    inUse: usedVolumes.has(v.Name),
+  }));
 }
