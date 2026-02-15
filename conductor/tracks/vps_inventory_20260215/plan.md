@@ -14,7 +14,7 @@
 - [x] **Tarefa: API de Listagem de Imagens** (7adfd37)
   - **Escrever Testes:** Validar o retorno da lista de imagens com tamanhos.
   - **Implementar:** Endpoint API para buscar imagens via SDK.
-- [ ] **Tarefa: API de Listagem de Containers**
+- [x] **Tarefa: API de Listagem de Containers** (2739ae0)
   - **Escrever Testes:** Validar o retorno da lista de containers e status.
   - **Implementar:** Endpoint API para buscar containers.
 - [ ] **Tarefa: Interface do Dashboard (Tabela de Ativos)**
