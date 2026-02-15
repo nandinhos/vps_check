@@ -33,6 +33,6 @@
 - [x] **Tarefa: Ferramenta de Varredura de Disco do Sistema** (df716b3)
   - **Escrever Testes:** Validar identificação de diretórios grandes (fora do Docker).
   - **Implementar:** Serviço para executar `du -sh` em pastas críticas (`/var/log`, `/tmp`, `/var/cache`).
-- [ ] **Tarefa: CRUD de Limpeza (Volumes e Logs)**
+- [x] **Tarefa: CRUD de Limpeza (Volumes e Logs)** (616e107)
   - **Implementar:** Botões para remover volumes órfãos e truncar logs de containers.
 - [ ] **Tarefa: Conductor - User Manual Verification 'Limpeza e Varredura' (Protocol in workflow.md)**

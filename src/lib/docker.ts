@@ -1,5 +1,9 @@
 import Docker from 'dockerode';
 import fs from 'fs';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+const execPromise = promisify(exec);
 
 let docker: Docker | null = null;
 
@@ -137,4 +141,28 @@ export async function listVolumes(): Promise<DockerVolume[]> {
     mountpoint: v.Mountpoint,
     inUse: usedVolumes.has(v.Name),
   }));
+}
+
+/**
+ * Remove um volume do Docker.
+ */
+export async function removeVolume(name: string): Promise<void> {
+  const dockerInstance = getDockerInstance();
+  const volume = dockerInstance.getVolume(name);
+  await volume.remove();
+}
+
+/**
+ * Limpa (trunca) os logs de um container.
+ */
+export async function clearContainerLogs(id: string): Promise<void> {
+  const dockerInstance = getDockerInstance();
+  const data = await dockerInstance.getContainer(id).inspect();
+  const logPath = data.LogPath;
+  
+  if (logPath && fs.existsSync(logPath)) {
+    await execPromise(`truncate -s 0 ${logPath}`);
+  } else {
+    throw new Error('Caminho do log não encontrado ou inacessível');
+  }
 }
