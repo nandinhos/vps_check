@@ -260,9 +260,20 @@ export default function Home() {
                 <p className="text-xs text-zinc-500 italic">Nenhum dado de varredura disponível.</p>
               ) : systemScan.map((s) => (
                 <div key={s.path} className="flex flex-col gap-1">
-                  <div className="flex justify-between text-xs">
+                  <div className="flex justify-between text-xs items-center">
                     <span className="text-zinc-400 truncate max-w-[180px]">{s.path}</span>
-                    <span className="font-mono font-bold text-zinc-200">{s.formattedSize}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-zinc-200">{s.formattedSize}</span>
+                      {s.path === 'Docker Build Cache' && s.size > 0 && (
+                        <button
+                          onClick={() => handleAction('build-cache', '/api/system/prune', 'POST', 'Limpar todo o Build Cache do Docker?')}
+                          disabled={actionLoading === 'build-cache'}
+                          className="text-[10px] text-red-500 hover:text-red-400 font-bold uppercase underline decoration-red-500/30 underline-offset-2"
+                        >
+                          Limpar
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <div className="w-full bg-zinc-800 rounded-full h-1">
                     <div 

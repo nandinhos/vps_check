@@ -35,4 +35,6 @@
   - **Implementar:** Serviço para executar `du -sh` em pastas críticas (`/var/log`, `/tmp`, `/var/cache`).
 - [x] **Tarefa: CRUD de Limpeza (Volumes e Logs)** (2afa502)
   - **Implementar:** Botões para remover volumes órfãos e truncar logs de containers.
+- [~] **Tarefa: Expansão da Varredura (Cache, APT e Journal)**
+  - **Implementar:** Monitoramento de Build Cache do Docker, Journal do Sistema e diretórios do APT.
 - [ ] **Tarefa: Conductor - User Manual Verification 'Limpeza e Varredura' (Protocol in workflow.md)**

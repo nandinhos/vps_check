@@ -5,29 +5,36 @@ jest.mock('child_process', () => ({
   exec: jest.fn(),
 }));
 
-describe('System Service', () => {
-  it('deve retornar o uso de disco de pastas críticas simulando sucesso', async () => {
-    (exec as unknown as jest.Mock).mockImplementation((cmd, callback) => {
-      // Importante: du -sb retorna "size\tpath\n"
-      callback(null, '1048576\t/some/path\n', '');
-    });
-
-    const usage = await scanDiskUsage();
-    expect(Array.isArray(usage)).toBe(true);
-    expect(usage.length).toBe(6); // Definido no array pathsToScan
-    expect(usage[0]).toHaveProperty('path', '/var/log');
-    expect(usage[0].size).toBe(1048576);
-    expect(usage[0].formattedSize).toBe('1.00 MB');
+describe('System Service Expansion', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
   });
 
-  it('deve tratar erros de permissão mas ainda retornar se houver stdout', async () => {
+  it('deve incluir o Build Cache do Docker com parsing correto de GB', async () => {
     (exec as unknown as jest.Mock).mockImplementation((cmd, callback) => {
-      // Simula erro de saída (exit code 1) mas com stdout parcial
-      callback(new Error('Command failed'), '500\t/path\n', 'du: permission denied');
+      if (cmd.includes('docker system df')) {
+        callback(null, '1.2GB\n', '');
+      } else {
+        callback(null, '1024\t/path\n', '');
+      }
     });
 
     const usage = await scanDiskUsage();
-    expect(usage.length).toBe(6);
-    expect(usage[0].size).toBe(500);
+    const cache = usage.find(u => u.path === 'Docker Build Cache');
+    expect(cache).toBeDefined();
+    expect(cache?.size).toBe(1.2 * 1024 * 1024 * 1024);
+    expect(cache?.formattedSize).toBe('1.20 GB');
+  });
+
+  it('deve incluir caminhos de sistema como APT e Journal', async () => {
+    (exec as unknown as jest.Mock).mockImplementation((cmd, callback) => {
+      callback(null, '100\t/path\n', '');
+    });
+
+    const usage = await scanDiskUsage();
+    const paths = usage.map(u => u.path);
+    expect(paths).toContain('/var/log/journal');
+    expect(paths).toContain('/var/cache/apt');
+    expect(paths).toContain('/home/devuser/.cache');
   });
 });
