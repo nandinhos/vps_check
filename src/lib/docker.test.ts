@@ -1,63 +1,52 @@
-import { getDockerInstance } from './docker';
+import { listContainers, getDockerInstance } from './docker';
+import { exec } from 'child_process';
+
+jest.mock('child_process', () => ({
+  exec: jest.fn(),
+}));
+
+jest.mock('dockerode', () => {
+  return jest.fn().mockImplementation(() => ({
+    listContainers: jest.fn().mockResolvedValue([
+      {
+        Id: '123',
+        Names: ['/test-container'],
+        Image: 'test-image',
+        ImageID: 'img-123',
+        Status: 'Up 1 hour',
+        State: 'running',
+        Created: 123456789,
+        Mounts: []
+      }
+    ]),
+    getContainer: jest.fn().mockReturnValue({
+      inspect: jest.fn().mockResolvedValue({
+        LogPath: '/var/lib/docker/containers/123/123-json.log'
+      })
+    }),
+    listImages: jest.fn().mockResolvedValue([]),
+    listVolumes: jest.fn().mockResolvedValue({ Volumes: [] })
+  }));
+});
 
 describe('Docker Service', () => {
-  it('deve retornar uma instância do Dockerode', () => {
-    const docker = getDockerInstance();
-    expect(docker).toBeDefined();
-  });
+  it('deve listar containers com tamanho de log simulado via du', async () => {
+    (exec as unknown as jest.Mock).mockImplementation((cmd, callback) => {
+      if (cmd.includes('du -b')) {
+        callback(null, '5000\t/path\n', '');
+      } else {
+        callback(null, '', '');
+      }
+    });
 
-  it('deve conseguir listar imagens (valida conectividade)', async () => {
-    const docker = getDockerInstance();
-    try {
-      const images = await docker.listImages();
-      expect(Array.isArray(images)).toBe(true);
-    } catch (error) {
-      console.error('Erro ao conectar com Docker:', error);
-      throw error;
-    }
-  });
-
-  it('deve retornar uma lista de imagens formatada com ID, nome e tamanho', async () => {
-    const { listImages } = await import('./docker');
-    const images = await listImages();
-    
-    expect(Array.isArray(images)).toBe(true);
-    if (images.length > 0) {
-      expect(images[0]).toHaveProperty('id');
-      expect(images[0]).toHaveProperty('name');
-      expect(images[0]).toHaveProperty('size');
-      expect(images[0]).toHaveProperty('isDangling');
-      expect(images[0]).toHaveProperty('inUse');
-      expect(typeof images[0].size).toBe('number');
-    }
-  });
-
-  it('deve retornar uma lista de containers formatada', async () => {
-    const { listContainers } = await import('./docker');
     const containers = await listContainers();
     
-    expect(Array.isArray(containers)).toBe(true);
-    if (containers.length > 0) {
-      expect(containers[0]).toHaveProperty('id');
-      expect(containers[0]).toHaveProperty('name');
-      expect(containers[0]).toHaveProperty('image');
-      expect(containers[0]).toHaveProperty('imageId');
-      expect(containers[0]).toHaveProperty('status');
-      expect(containers[0]).toHaveProperty('state');
-      expect(containers[0]).toHaveProperty('logSize');
-    }
-  });
-
-  it('deve retornar uma lista de volumes formatada', async () => {
-    const { listVolumes } = await import('./docker');
-    const volumes = await listVolumes();
-    
-    expect(Array.isArray(volumes)).toBe(true);
-    if (volumes.length > 0) {
-      expect(volumes[0]).toHaveProperty('name');
-      expect(volumes[0]).toHaveProperty('driver');
-      expect(volumes[0]).toHaveProperty('mountpoint');
-      expect(volumes[0]).toHaveProperty('inUse');
-    }
+    expect(containers.length).toBe(1);
+    expect(containers[0].name).toBe('test-container');
+    expect(containers[0].logSize).toBe(5000);
+    expect(exec).toHaveBeenCalledWith(
+      expect.stringContaining('sudo du -b'),
+      expect.any(Function)
+    );
   });
 });

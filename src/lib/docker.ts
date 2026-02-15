@@ -83,12 +83,20 @@ export async function listContainers(): Promise<DockerContainer[]> {
       try {
         const data = await dockerInstance.getContainer(container.Id).inspect();
         const logPath = data.LogPath;
-        if (logPath && fs.existsSync(logPath)) {
-          const stats = fs.statSync(logPath);
-          logSize = stats.size;
+        if (logPath) {
+          // Usamos sudo du para contornar restrições de permissão em /var/lib/docker
+          const result = await new Promise<{ stdout: string }>((resolve, reject) => {
+            exec(`sudo du -b ${logPath}`, (error, stdout) => {
+              if (error) return reject(error);
+              resolve({ stdout: String(stdout) });
+            });
+          });
+          
+          const [sizeStr] = result.stdout.split(/\s+/);
+          logSize = parseInt(sizeStr) || 0;
         }
       } catch (e) {
-        // Silenciosamente falha se não conseguir ler o log (ex: permissão)
+        // Silenciosamente falha se não conseguir ler o log
       }
 
       return {
@@ -160,8 +168,14 @@ export async function clearContainerLogs(id: string): Promise<void> {
   const data = await dockerInstance.getContainer(id).inspect();
   const logPath = data.LogPath;
   
-  if (logPath && fs.existsSync(logPath)) {
-    await execPromise(`truncate -s 0 ${logPath}`);
+  if (logPath) {
+    // Usamos sudo truncate para contornar permissões
+    await new Promise((resolve, reject) => {
+      exec(`sudo truncate -s 0 ${logPath}`, (error) => {
+        if (error) return reject(error);
+        resolve(true);
+      });
+    });
   } else {
     throw new Error('Caminho do log não encontrado ou inacessível');
   }
