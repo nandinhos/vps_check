@@ -29,4 +29,18 @@ describe('Docker Service', () => {
       expect(typeof images[0].size).toBe('number');
     }
   });
+
+  it('deve retornar uma lista de containers formatada', async () => {
+    const { listContainers } = await import('./docker');
+    const containers = await listContainers();
+    
+    expect(Array.isArray(containers)).toBe(true);
+    if (containers.length > 0) {
+      expect(containers[0]).toHaveProperty('id');
+      expect(containers[0]).toHaveProperty('name');
+      expect(containers[0]).toHaveProperty('image');
+      expect(containers[0]).toHaveProperty('status');
+      expect(containers[0]).toHaveProperty('state');
+    }
+  });
 });

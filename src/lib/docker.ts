@@ -21,6 +21,15 @@ export interface DockerImage {
   tag: string;
 }
 
+export interface DockerContainer {
+  id: string;
+  name: string;
+  image: string;
+  status: string;
+  state: string;
+  created: number;
+}
+
 /**
  * Lista todas as imagens Docker no sistema, formatadas.
  */
@@ -34,5 +43,22 @@ export async function listImages(): Promise<DockerImage[]> {
     size: img.Size,
     created: img.Created,
     tag: img.RepoTags?.[0]?.split(':')[1] || 'latest',
+  }));
+}
+
+/**
+ * Lista todos os containers Docker no sistema, formatados.
+ */
+export async function listContainers(): Promise<DockerContainer[]> {
+  const dockerInstance = getDockerInstance();
+  const containers = await dockerInstance.listContainers({ all: true });
+
+  return containers.map((container) => ({
+    id: container.Id,
+    name: container.Names[0].replace(/^\//, ''),
+    image: container.Image,
+    status: container.Status,
+    state: container.State,
+    created: container.Created,
   }));
 }
