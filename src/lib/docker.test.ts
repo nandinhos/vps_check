@@ -44,6 +44,7 @@ describe('Docker Service', () => {
       expect(containers[0]).toHaveProperty('imageId');
       expect(containers[0]).toHaveProperty('status');
       expect(containers[0]).toHaveProperty('state');
+      expect(containers[0]).toHaveProperty('logSize');
     }
   });
 

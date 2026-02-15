@@ -1,4 +1,5 @@
 import Docker from 'dockerode';
+import fs from 'fs';
 
 let docker: Docker | null = null;
 
@@ -31,6 +32,7 @@ export interface DockerContainer {
   status: string;
   state: string;
   created: number;
+  logSize: number;
 }
 
 export interface DockerVolume {
@@ -71,15 +73,34 @@ export async function listContainers(): Promise<DockerContainer[]> {
   const dockerInstance = getDockerInstance();
   const containers = await dockerInstance.listContainers({ all: true });
 
-  return containers.map((container) => ({
-    id: container.Id,
-    name: container.Names[0].replace(/^\//, ''),
-    image: container.Image,
-    imageId: container.ImageID,
-    status: container.Status,
-    state: container.State,
-    created: container.Created,
-  }));
+  const containersWithLogs = await Promise.all(
+    containers.map(async (container) => {
+      let logSize = 0;
+      try {
+        const data = await dockerInstance.getContainer(container.Id).inspect();
+        const logPath = data.LogPath;
+        if (logPath && fs.existsSync(logPath)) {
+          const stats = fs.statSync(logPath);
+          logSize = stats.size;
+        }
+      } catch (e) {
+        // Silenciosamente falha se não conseguir ler o log (ex: permissão)
+      }
+
+      return {
+        id: container.Id,
+        name: container.Names[0].replace(/^\//, ''),
+        image: container.Image,
+        imageId: container.ImageID,
+        status: container.Status,
+        state: container.State,
+        created: container.Created,
+        logSize,
+      };
+    })
+  );
+
+  return containersWithLogs;
 }
 
 /**
