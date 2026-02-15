@@ -24,7 +24,7 @@
 
 ## Fase 3: Varredura de Disco Profunda e Gerenciamento de Volumes/Logs
 
-- [ ] **Tarefa: API de Inventário de Volumes**
+- [x] **Tarefa: API de Inventário de Volumes** (3eab502)
   - **Escrever Testes:** Validar listagem de volumes e detecção de volumes órfãos.
   - **Implementar:** Endpoint para listar volumes e seu uso estimado de disco.
 - [ ] **Tarefa: API de Analise de Logs de Containers**
