@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { removeVolume } from '@/lib/docker';
+import { DockerVolumeRepository } from '@/infrastructure/docker';
+import { PrismaAuditLogRepository } from '@/infrastructure/database/repositories/AuditLogRepository';
+import { logger } from '@/shared/logger';
+import { cacheManager } from '@/shared/cache';
+
+const volumeRepository = new DockerVolumeRepository();
+const auditLogRepository = new PrismaAuditLogRepository();
 
 export async function DELETE(
   request: NextRequest,
@@ -7,12 +13,21 @@ export async function DELETE(
 ) {
   try {
     const { name } = await params;
-    await removeVolume(name);
+    await volumeRepository.delete(name);
+    
+    await auditLogRepository.create({
+      action: 'DELETE_VOLUME',
+      resource: name,
+      details: { name },
+    });
+    
+    cacheManager.invalidate('volumes');
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    console.error('Erro ao remover volume:', error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Erro desconhecido';
+    logger.error('Erro ao remover volume', error);
     return NextResponse.json(
-      { error: error.message || 'Falha ao remover volume do Docker' },
+      { error: message || 'Falha ao remover volume do Docker' },
       { status: 500 }
     );
   }

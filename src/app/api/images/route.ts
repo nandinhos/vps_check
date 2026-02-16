@@ -1,12 +1,23 @@
 import { NextResponse } from 'next/server';
-import { listImages } from '@/lib/docker';
+import { DockerImageRepository } from '@/infrastructure/docker';
+import { logger } from '@/shared/logger';
+import { cacheManager } from '@/shared/cache';
+import { config } from '@/config/app';
+
+const imageRepository = new DockerImageRepository();
 
 export async function GET() {
   try {
-    const images = await listImages();
+    const cached = cacheManager.get<Awaited<ReturnType<typeof imageRepository.findAll>>>('images');
+    if (cached) {
+      return NextResponse.json(cached);
+    }
+
+    const images = await imageRepository.findAll();
+    cacheManager.set('images', images, config.cache.ttl.images);
     return NextResponse.json(images);
   } catch (error) {
-    console.error('Erro ao listar imagens:', error);
+    logger.error('Erro ao listar imagens', error);
     return NextResponse.json(
       { error: 'Falha ao buscar imagens do Docker' },
       { status: 500 }

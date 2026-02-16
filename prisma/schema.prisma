@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Container {
+  id        String   @id
+  name      String
+  image     String
+  imageId   String
+  status    String
+  state     String
+  created   Int
+  logSize   BigInt  @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  lastSeenAt DateTime @default(now())
+
+  @@index([name])
+  @@index([lastSeenAt])
+}
+
+model Image {
+  id         String   @id
+  name       String
+  size       BigInt
+  created    Int
+  tag        String
+  isDangling Boolean  @default(false)
+  inUse      Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  lastSeenAt DateTime @default(now())
+
+  @@index([name])
+  @@index([isDangling])
+  @@index([lastSeenAt])
+}
+
+model Volume {
+  name       String   @id
+  driver     String
+  mountpoint String
+  inUse      Boolean  @default(false)
+  size       BigInt?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  lastSeenAt DateTime @default(now())
+
+  @@index([inUse])
+  @@index([lastSeenAt])
+}
+
+model DiskScan {
+  id            String   @id @default(uuid())
+  path          String
+  size          BigInt
+  formattedSize String
+  scannedAt     DateTime @default(now())
+
+  @@index([scannedAt])
+  @@index([path])
+}
+
+model SystemSnapshot {
+  id                String   @id @default(uuid())
+  timestamp         DateTime @default(now())
+  totalDiskUsage    BigInt
+  totalImagesSize   BigInt
+  totalContainers   Int
+  totalVolumes      Int
+  metadata          String?
+
+  @@index([timestamp])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  action    String
+  resource  String
+  details   String?
+  userId    String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([action])
+  @@index([resource])
+}

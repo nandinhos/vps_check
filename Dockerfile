@@ -1,9 +1,9 @@
 # Dockerfile para Next.js (Multi-stage build)
-FROM node:20-alpine AS base
+FROM node:20-slim AS base
 
 # 1. Instalar dependências apenas quando necessário
 FROM base AS deps
-RUN apk add --no-cache libc6-compat
+RUN apt-get update && apt-get install -y openssl
 WORKDIR /app
 
 COPY package.json package-lock.json ./
@@ -27,17 +27,18 @@ WORKDIR /app
 ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+RUN apt-get update && apt-get install -y openssl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /app/data
 
 COPY --from=builder /app/public ./public
-
-# Configuração de saída do standalone (Next.js 12+)
-# Nota: certifique-se que output: 'standalone' está no next.config.ts
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-USER nextjs
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/prisma/dev.db /app/data/dev.db
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/client
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
 
 EXPOSE 3000
 

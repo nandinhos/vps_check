@@ -2,13 +2,20 @@ services:
   vps-manager:
     build: .
     container_name: vps-manager
+    privileged: true
     user: "root"
     ports:
       - "45000:3000"
     volumes:
+      - vps-data:/app/data
       - /var/run/docker.sock:/var/run/docker.sock
       - /:/hostfs:ro
     restart: always
     environment:
       - PORT=3000
       - NODE_ENV=production
+      - DOCKER_SOCKET=/var/run/docker.sock
+      - DATABASE_URL=file:/app/data/dev.db
+
+volumes:
+  vps-data:

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { exploreDirectory } from '@/lib/system';
+import { exploreDirectory } from '@/infrastructure/system/SystemScanner';
+import { logger } from '@/shared/logger';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -13,7 +14,7 @@ export async function GET(req: NextRequest) {
     const details = await exploreDirectory(path);
     return NextResponse.json(details);
   } catch (error) {
-    console.error(`Erro ao explorar diretório ${path}:`, error);
+    logger.error(`Erro ao explorar diretório ${path}`, error);
     return NextResponse.json({ error: 'Falha ao explorar diretório' }, { status: 500 });
   }
 }
