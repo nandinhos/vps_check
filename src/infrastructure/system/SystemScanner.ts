@@ -5,6 +5,10 @@ import { logger } from '@/shared/logger';
 
 const execPromise = promisify(exec);
 
+// Cache simples em memória para evitar execuções pesadas frequentes
+let scanCache: { data: DiskUsage[], timestamp: number } | null = null;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
+
 const DEFAULT_PATHS_TO_SCAN = [
   '/var/log',
   '/var/log/journal',
@@ -44,6 +48,11 @@ function parseDockerSize(sizeStr: string): number {
 }
 
 export async function scanDiskUsage(paths = DEFAULT_PATHS_TO_SCAN): Promise<DiskUsage[]> {
+    const now = Date.now();
+    if (scanCache && (now - scanCache.timestamp < CACHE_DURATION)) {
+      return scanCache.data;
+    }
+
   const results: DiskUsage[] = [];
 
   for (const path of paths) {
@@ -85,7 +94,9 @@ export async function scanDiskUsage(paths = DEFAULT_PATHS_TO_SCAN): Promise<Disk
     // Falha silenciosa
   }
 
-  return results.sort((a, b) => b.size - a.size);
+  const sortedResults = results.sort((a, b) => b.size - a.size);
+  scanCache = { data: sortedResults, timestamp: Date.now() };
+  return sortedResults;
 }
 
 export async function exploreDirectory(path: string): Promise<DiskUsage[]> {

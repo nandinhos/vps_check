@@ -123,6 +123,37 @@ export class DockerContainerRepository implements IContainerRepository {
     const container = docker.getContainer(id);
     await container.remove({ force: true });
   }
+
+  async getLogs(id: string, tail: number = 200): Promise<string> {
+    const docker = getDockerClient();
+    const container = docker.getContainer(id);
+    
+    try {
+      const logs = await container.logs({
+        stdout: true,
+        stderr: true,
+        tail: tail,
+        follow: false,
+      });
+
+      // O Docker retorna os logs multiplexados (com headers de 8 bytes). 
+      // O dockerode não desmultiplexa automaticamente no método .logs() quando retorna Buffer.
+      // Vamos converter para string e limpar caracteres de controle se necessário.
+      // Uma forma simples de ler é tratar como string e remover os headers de 8 bytes que aparecem.
+      
+      const logString = logs.toString('utf8');
+      
+      // Regex para remover os headers do protocolo de stream do Docker (8 bytes iniciais de cada chunk)
+      // O header é [type, 0, 0, 0, size_3, size_2, size_1, size_0]
+      // Aqui vamos apenas limpar caracteres não imprimíveis no início das linhas para simplificar.
+      const cleanedLogs = logString.replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/g, '');
+      
+      return cleanedLogs;
+    } catch (error) {
+      logger.error('Erro ao buscar logs do container via SDK', { id, error });
+      return 'Não foi possível recuperar os logs do container via SDK.';
+    }
+  }
 }
 
 export async function clearContainerLogs(id: string): Promise<void> {

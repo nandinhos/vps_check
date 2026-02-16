@@ -19,7 +19,7 @@ export function DashboardStats() {
     { label: 'Containers', value: containers?.length || 0, icon: ContainerIcon, color: 'text-blue-400', bg: 'bg-blue-500/10' },
     { label: 'Imagens Docker', value: formatSize(totalImagesSize), icon: HardDrive, color: 'text-purple-400', bg: 'bg-purple-500/10' },
     { label: 'Volumes', value: volumes?.length || 0, icon: Box, color: 'text-orange-400', bg: 'bg-orange-500/10' },
-    { label: 'Uso Disco', value: formatSize(totalDiskUsage), icon: Database, color: 'text-green-400', bg: 'bg-green-500/10' },
+    { label: 'Uso Disco', value: formatSize(totalDiskUsage), icon: Database, color: totalDiskUsage > 50 * 1024 * 1024 * 1024 ? 'text-red-500 animate-pulse' : 'text-green-400', bg: 'bg-green-500/10' },
   ];
 
   const warnings = [

@@ -1,5 +1,7 @@
+import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Container, Image, Volume, DiskUsage } from '@/domain/entities';
+import { logger } from '@/shared/logger';
 
 const api = {
   async getContainers(): Promise<Container[]> {
@@ -29,6 +31,12 @@ const api = {
   async getHealth() {
     const res = await fetch('/api/health');
     if (!res.ok) throw new Error('Failed to fetch health');
+    return res.json();
+  },
+
+  async getContainerLogs(id: string, tail: number = 200): Promise<{ logs: string }> {
+    const res = await fetch(`/api/containers/${id}/logs?tail=${tail}`);
+    if (!res.ok) throw new Error('Failed to fetch logs');
     return res.json();
   },
 
@@ -96,7 +104,8 @@ export function useContainers() {
   return useQuery({
     queryKey: ['containers'],
     queryFn: api.getContainers,
-    staleTime: 30000,
+    staleTime: 2000,
+    refetchInterval: 5000, // Checagem a cada 5 segundos
   });
 }
 
@@ -204,4 +213,44 @@ export function useManageContainers() {
       }, 2000);
     },
   });
+}
+
+export function useContainerLogs(id: string, tail: number = 200, enabled: boolean = false) {
+  return useQuery({
+    queryKey: ['container-logs', id, tail],
+    queryFn: () => api.getContainerLogs(id, tail),
+    enabled,
+    refetchInterval: 5000,
+  });
+}
+
+export function useDockerEvents() {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const eventSource = new EventSource('/api/system/events');
+
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        
+        // Se houver qualquer evento de container, imagem ou volume, invalidamos as queries
+        if (['container', 'image', 'volume'].includes(data.Type)) {
+          queryClient.invalidateQueries({ queryKey: ['containers'] });
+          queryClient.invalidateQueries({ queryKey: ['images'] });
+          queryClient.invalidateQueries({ queryKey: ['volumes'] });
+        }
+      } catch (e) {
+        // Heartbeats ou mensagens não-JSON
+      }
+    };
+
+    eventSource.onerror = () => {
+      eventSource.close();
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, [queryClient]);
 }

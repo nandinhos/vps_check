@@ -54,20 +54,25 @@ export function DiskUsageChart({ data }: DiskUsageChartProps) {
               <YAxis 
                 type="category" 
                 dataKey="name" 
-                tick={{ fill: '#71717a', fontSize: 11 }} 
+                tick={{ fill: 'currentColor', opacity: 0.6, fontSize: 10 }} 
                 width={100}
+                axisLine={false}
+                tickLine={false}
               />
               <Tooltip
+                cursor={{ fill: 'transparent' }}
                 contentStyle={{ 
-                  backgroundColor: '#18181b', 
-                  border: '1px solid #27272a',
+                  backgroundColor: 'hsl(var(--card))', 
+                  borderColor: 'hsl(var(--border))',
                   borderRadius: '8px',
-                  fontSize: '12px'
+                  fontSize: '11px',
+                  color: 'hsl(var(--foreground))'
                 }}
+                itemStyle={{ color: 'inherit' }}
                 formatter={(value) => [`${value} MB`, 'Tamanho']}
                 labelFormatter={(label) => chartData.find(d => d.name === label)?.fullPath || String(label)}
               />
-              <Bar dataKey="size" radius={[0, 4, 4, 0]}>
+              <Bar dataKey="size" radius={[0, 4, 4, 0]} barSize={12}>
                 {chartData.map((_, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}

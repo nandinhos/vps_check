@@ -42,7 +42,8 @@ import { categorizePorts } from '@/lib/utils/ports';
 import { PortLink } from '@/components/ui/port-link';
 import type { Container } from '@/domain/entities';
 import { formatSize } from '@/lib/utils';
-import { Globe, Database, Wrench } from 'lucide-react';
+import { Globe, Database, Wrench, Terminal } from 'lucide-react';
+import { LogViewerDialog } from './LogViewerDialog';
 
 interface ContainerCardProps {
   container: Container;
@@ -52,6 +53,7 @@ export function ContainerCard({ container }: ContainerCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [loading, setLoading] = useState<string | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showLogs, setShowLogs] = useState(false);
   
   const clearLogs = useClearContainerLogs();
   const manageContainer = useManageContainer();
@@ -250,7 +252,10 @@ export function ContainerCard({ container }: ContainerCardProps) {
               </div>
             )}
             
-            <Badge variant={isRunning ? 'success' : container.state === 'exited' ? 'destructive' : 'secondary'}>
+            <Badge 
+              variant={isRunning ? 'success' : container.state === 'exited' ? 'destructive' : 'secondary'}
+              className={isRunning ? 'animate-status-pulse' : ''}
+            >
               {container.status}
             </Badge>
             
@@ -279,6 +284,10 @@ export function ContainerCard({ container }: ContainerCardProps) {
                     </DropdownMenuItem>
                   </>
                 )}
+                <DropdownMenuItem onClick={() => setShowLogs(true)}>
+                  <Terminal className="mr-2 h-4 w-4 text-primary" />
+                  Ver Logs
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleClearLogs} disabled={loading === 'logs'}>
                   <Power className="mr-2 h-4 w-4 text-yellow-500" />
                   {loading === 'logs' ? 'Limpando...' : 'Limpar Logs'}
@@ -427,6 +436,14 @@ export function ContainerCard({ container }: ContainerCardProps) {
               )}
               <Button 
                 size="sm" 
+                variant="outline"
+                onClick={() => setShowLogs(true)}
+              >
+                <Terminal className="h-3 w-3 mr-1" />
+                Logs
+              </Button>
+              <Button 
+                size="sm" 
                 variant="destructive"
                 onClick={() => setShowConfirm(true)}
                 disabled={loading === 'delete'}
@@ -438,6 +455,13 @@ export function ContainerCard({ container }: ContainerCardProps) {
           </div>
         )}
       </Card>
+
+      <LogViewerDialog
+        containerId={container.id}
+        containerName={container.name}
+        open={showLogs}
+        onOpenChange={setShowLogs}
+      />
 
       <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
         <AlertDialogContent>

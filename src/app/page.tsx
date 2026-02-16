@@ -25,7 +25,15 @@ import { ImagesTable } from '@/components/dashboard/ImagesTable';
 import { ImagesList } from '@/components/dashboard/ImagesList';
 import { VolumesTable } from '@/components/dashboard/VolumesTable';
 import { VolumesList } from '@/components/dashboard/VolumesList';
-import { useDiskScan, useHealth, usePruneBuildCache, useContainers, useImages, useVolumes } from '@/lib/hooks/use-api';
+import { 
+  useDiskScan, 
+  useHealth, 
+  usePruneBuildCache, 
+  useContainers, 
+  useImages, 
+  useVolumes,
+  useDockerEvents 
+} from '@/lib/hooks/use-api';
 import { useToast } from '@/components/ui/toast';
 import { cn, formatSize } from '@/lib/utils';
 
@@ -53,6 +61,9 @@ export default function Dashboard() {
   const { data: volumes } = useVolumes();
   const pruneCache = usePruneBuildCache();
   const { toast } = useToast();
+
+  // Ativa escuta de eventos em tempo real
+  useDockerEvents();
 
   if (!mounted) {
     return (

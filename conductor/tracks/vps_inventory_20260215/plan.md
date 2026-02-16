@@ -37,4 +37,4 @@
   - **Implementar:** Botões para remover volumes órfãos e truncar logs de containers.
 - [x] **Tarefa: Expansão da Varredura (Cache, APT e Journal)** (2bc1f67)
   - **Implementar:** Monitoramento de Build Cache do Docker, Journal do Sistema e diretórios do APT.
-- [ ] **Tarefa: Conductor - User Manual Verification 'Limpeza e Varredura' (Protocol in workflow.md)**
+- [x] **Tarefa: Conductor - User Manual Verification 'Limpeza e Varredura' (Protocol in workflow.md)** (6c8a214)

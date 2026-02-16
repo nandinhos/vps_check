@@ -87,4 +87,8 @@ export class PrismaContainerRepository implements IContainerRepository {
       where: { id },
     });
   }
+
+  async getLogs(id: string): Promise<string> {
+    throw new Error('Logs não são persistidos no banco de dados. Use o repositório Docker.');
+  }
 }

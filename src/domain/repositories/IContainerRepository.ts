@@ -7,4 +7,5 @@ export interface IContainerRepository {
   update(id: string, input: ContainerUpdateInput): Promise<Container>;
   upsert(input: ContainerCreateInput): Promise<Container>;
   delete(id: string): Promise<void>;
+  getLogs(id: string, tail?: number): Promise<string>;
 }

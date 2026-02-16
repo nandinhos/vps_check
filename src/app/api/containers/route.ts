@@ -12,14 +12,14 @@ const auditLogRepository = new PrismaAuditLogRepository();
 
 export async function GET() {
   try {
-    const cached = cacheManager.get<Awaited<ReturnType<typeof containerRepository.findAll>>>('containers');
-    if (cached) {
-      return NextResponse.json(cached);
-    }
-
     const containers = await containerRepository.findAll();
-    cacheManager.set('containers', containers, config.cache.ttl.containers);
-    return NextResponse.json(containers);
+    return NextResponse.json(containers, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      }
+    });
   } catch (error) {
     logger.error('Erro ao listar containers', error);
     return NextResponse.json(
