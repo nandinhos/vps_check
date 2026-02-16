@@ -27,7 +27,9 @@ WORKDIR /app
 ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
 
-RUN apt-get update && apt-get install -y openssl ca-certificates \
+# Instala Docker CLI e Compose Plugin
+RUN apt-get update && apt-get install -y openssl ca-certificates curl \
+    && curl -fsSL https://get.docker.com | sh \
     && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /app/data

@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { Container, Image, Volume, DiskUsage } from '@/domain/entities';
-import { logger } from '@/shared/logger';
+import type { Container, Image, Volume, DiskUsage, Project } from '@/domain/entities';
 
 const api = {
   async getContainers(): Promise<Container[]> {
@@ -19,6 +18,12 @@ const api = {
   async getVolumes(): Promise<Volume[]> {
     const res = await fetch('/api/volumes');
     if (!res.ok) throw new Error('Failed to fetch volumes');
+    return res.json();
+  },
+
+  async getProjects(): Promise<Project[]> {
+    const res = await fetch('/api/projects');
+    if (!res.ok) throw new Error('Failed to fetch projects');
     return res.json();
   },
   
@@ -110,6 +115,19 @@ const api = {
     if (!res.ok) throw new Error(`Failed to ${action} containers`);
     return res.json();
   },
+
+  async manageProject(path: string, action: 'up' | 'down' | 'restart' | 'pull') {
+    const res = await fetch('/api/projects/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path, action }),
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || `Failed to ${action} project`);
+    }
+    return res.json();
+  },
 };
 
 export function useContainers() {
@@ -117,7 +135,7 @@ export function useContainers() {
     queryKey: ['containers'],
     queryFn: api.getContainers,
     staleTime: 2000,
-    refetchInterval: 5000, // Checagem a cada 5 segundos
+    refetchInterval: 5000,
   });
 }
 
@@ -133,6 +151,14 @@ export function useVolumes() {
   return useQuery({
     queryKey: ['volumes'],
     queryFn: api.getVolumes,
+    staleTime: 30000,
+  });
+}
+
+export function useProjects() {
+  return useQuery({
+    queryKey: ['projects'],
+    queryFn: api.getProjects,
     staleTime: 30000,
   });
 }
@@ -227,6 +253,18 @@ export function useManageContainers() {
   });
 }
 
+export function useManageProject() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ path, action }: { path: string; action: 'up' | 'down' | 'restart' | 'pull' }) => 
+      api.manageProject(path, action),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['containers'] });
+    },
+  });
+}
+
 export function useContainerLogs(id: string, tail: number = 200, enabled: boolean = false) {
   return useQuery({
     queryKey: ['container-logs', id, tail],
@@ -241,7 +279,7 @@ export function useContainerStats(id: string, enabled: boolean = true) {
     queryKey: ['container-stats', id],
     queryFn: () => api.getContainerStats(id),
     enabled,
-    refetchInterval: 5000, // Atualiza métricas a cada 5 segundos
+    refetchInterval: 5000,
   });
 }
 
@@ -250,7 +288,7 @@ export function useContainerMetrics(id: string, enabled: boolean = true) {
     queryKey: ['container-metrics', id],
     queryFn: () => api.getContainerMetrics(id),
     enabled,
-    refetchInterval: 60000, // Atualiza histórico a cada minuto
+    refetchInterval: 60000,
   });
 }
 
@@ -263,16 +301,13 @@ export function useDockerEvents() {
     eventSource.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        
-        // Se houver qualquer evento de container, imagem ou volume, invalidamos as queries
         if (['container', 'image', 'volume'].includes(data.Type)) {
           queryClient.invalidateQueries({ queryKey: ['containers'] });
           queryClient.invalidateQueries({ queryKey: ['images'] });
           queryClient.invalidateQueries({ queryKey: ['volumes'] });
+          queryClient.invalidateQueries({ queryKey: ['projects'] });
         }
-      } catch (e) {
-        // Heartbeats ou mensagens não-JSON
-      }
+      } catch (e) {}
     };
 
     eventSource.onerror = () => {

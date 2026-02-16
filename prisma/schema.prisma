@@ -92,6 +92,16 @@ model AuditLog {
   @@index([resource])
 }
 
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  password  String   // Hash da senha
+  name      String?
+  role      String   @default("ADMIN") // ADMIN, VIEWER
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model Alert {
   id          String   @id @default(uuid())
   type        String   // Ex: CONTAINER_DIE, DISK_FULL, HIGH_CPU

@@ -9,7 +9,11 @@ export type AuditAction =
   | 'STOP_CONTAINER'
   | 'RESTART_CONTAINER'
   | 'PAUSE_CONTAINER'
-  | 'UNPAUSE_CONTAINER';
+  | 'UNPAUSE_CONTAINER'
+  | 'COMPOSE_UP'
+  | 'COMPOSE_DOWN'
+  | 'COMPOSE_RESTART'
+  | 'COMPOSE_PULL';
 
 export interface AuditLog {
   id: string;

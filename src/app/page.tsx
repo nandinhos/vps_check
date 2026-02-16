@@ -9,9 +9,12 @@ import {
   RefreshCw,
   Activity,
   ChevronRight,
-  Trash2
+  Trash2,
+  LogOut,
+  Folder
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -25,6 +28,7 @@ import { ImagesTable } from '@/components/dashboard/ImagesTable';
 import { ImagesList } from '@/components/dashboard/ImagesList';
 import { VolumesTable } from '@/components/dashboard/VolumesTable';
 import { VolumesList } from '@/components/dashboard/VolumesList';
+import { ProjectsList } from '@/components/dashboard/ProjectsList';
 import { 
   useDiskScan, 
   useHealth, 
@@ -32,12 +36,13 @@ import {
   useContainers, 
   useImages, 
   useVolumes,
-  useDockerEvents 
+  useDockerEvents,
+  useProjects
 } from '@/lib/hooks/use-api';
 import { useToast } from '@/components/ui/toast';
 import { cn, formatSize } from '@/lib/utils';
 
-type TabType = 'overview' | 'containers' | 'images' | 'volumes';
+type TabType = 'overview' | 'containers' | 'images' | 'volumes' | 'projects';
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
@@ -59,8 +64,20 @@ export default function Dashboard() {
   const { data: containers } = useContainers();
   const { data: images } = useImages();
   const { data: volumes } = useVolumes();
+  const { data: projects } = useProjects();
   const pruneCache = usePruneBuildCache();
   const { toast } = useToast();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      toast({ title: 'Logout realizado', description: 'Você saiu do sistema.' });
+      router.push('/login');
+    } catch {
+      toast({ title: 'Erro', description: 'Falha ao sair', variant: 'destructive' });
+    }
+  };
 
   // Ativa escuta de eventos em tempo real
   useDockerEvents();
@@ -78,6 +95,7 @@ export default function Dashboard() {
 
   const tabs = [
     { id: 'overview' as const, label: 'Visão Geral', icon: LayoutDashboard },
+    { id: 'projects' as const, label: 'Projetos', icon: Folder, count: projects?.length },
     { id: 'containers' as const, label: 'Containers', icon: ContainerIcon, count: containers?.length },
     { id: 'images' as const, label: 'Imagens', icon: ImageIcon, count: images?.length },
     { id: 'volumes' as const, label: 'Volumes', icon: HardDrive, count: volumes?.length },
@@ -140,6 +158,15 @@ export default function Dashboard() {
             </div>
             <div className="flex items-center gap-2">
               <ThemeToggle />
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={handleLogout}
+                className="text-muted-foreground hover:text-destructive"
+                title="Sair"
+              >
+                <LogOut className="w-4 h-4" />
+              </Button>
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary border border-border">
                 <span className={cn(
                   "w-2 h-2 rounded-full",
@@ -286,6 +313,9 @@ export default function Dashboard() {
 
         {/* Containers Tab */}
         {activeTab === 'containers' && <ContainersList />}
+
+        {/* Projects Tab */}
+        {activeTab === 'projects' && <ProjectsList />}
 
         {/* Images Tab */}
         {activeTab === 'images' && <ImagesList />}
