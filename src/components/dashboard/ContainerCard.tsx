@@ -42,6 +42,7 @@ import { categorizePorts } from '@/lib/utils/ports';
 import { PortLink } from '@/components/ui/port-link';
 import type { Container } from '@/domain/entities';
 import { formatSize } from '@/lib/utils';
+import { Globe, Database, Wrench } from 'lucide-react';
 
 interface ContainerCardProps {
   container: Container;
@@ -202,7 +203,53 @@ export function ContainerCard({ container }: ContainerCardProps) {
             </div>
           </div>
           
-          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+            {container.ports && container.ports.length > 0 && (
+              <div className="flex items-center gap-1">
+                {portCategories.web.slice(0, 2).map((port, idx) => {
+                  const portInfo = container.ports?.find(p => p.containerPort === port);
+                  if (!portInfo) return null;
+                  return (
+                    <a
+                      key={idx}
+                      href={`http://${hostAddress}:${portInfo.hostPort}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 px-2 py-1 text-xs bg-green-500/10 text-green-500 hover:bg-green-500/20 rounded transition-colors"
+                      title={`Acessar ${portInfo.hostPort}:${portInfo.containerPort}`}
+                    >
+                      <Globe className="h-3 w-3" />
+                      {portInfo.hostPort}
+                    </a>
+                  );
+                })}
+                {portCategories.databases.slice(0, 2).map((port, idx) => {
+                  const portInfo = container.ports?.find(p => p.containerPort === port);
+                  if (!portInfo) return null;
+                  return (
+                    <button
+                      key={`db-${idx}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigator.clipboard.writeText(`${hostAddress}:${portInfo.hostPort}`);
+                      }}
+                      className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 rounded transition-colors"
+                      title={`Copiar ${hostAddress}:${portInfo.hostPort}`}
+                    >
+                      <Database className="h-3 w-3" />
+                      {portInfo.hostPort}
+                    </button>
+                  );
+                })}
+                {portCategories.other.length > 0 && (
+                  <span className="flex items-center gap-1 px-2 py-1 text-xs bg-gray-500/10 text-gray-500 rounded" title="Outras portas">
+                    <Wrench className="h-3 w-3" />
+                    {container.ports.length}
+                  </span>
+                )}
+              </div>
+            )}
+            
             <Badge variant={isRunning ? 'success' : container.state === 'exited' ? 'destructive' : 'secondary'}>
               {container.status}
             </Badge>

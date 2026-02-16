@@ -100,6 +100,17 @@ export function ImageCard({ image }: ImageCardProps) {
           </div>
           
           <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+            {image.containers && image.containers.length > 0 && (
+              <div className="flex items-center gap-1">
+                <span className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-500/10 text-blue-500 rounded">
+                  <Container className="h-3 w-3" />
+                  {image.containers.length}
+                </span>
+                <span className="text-xs text-muted-foreground hidden md:inline">
+                  {image.containers.map(c => c.name).join(', ')}
+                </span>
+              </div>
+            )}
             <Badge variant={image.isDangling ? 'warning' : image.inUse ? 'success' : 'secondary'}>
               {image.isDangling ? 'Orfã' : image.inUse ? 'Em uso' : 'Não usada'}
             </Badge>

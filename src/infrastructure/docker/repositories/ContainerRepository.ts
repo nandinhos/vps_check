@@ -10,9 +10,14 @@ const execPromise = promisify(exec);
 export class DockerContainerRepository implements IContainerRepository {
   private extractPorts(container: any): PortMapping[] {
     const ports: PortMapping[] = [];
+    const seen = new Set<string>();
     
     if (container.Ports) {
       container.Ports.forEach((port: any) => {
+        const key = `${port.PublicPort || ''}-${port.PrivatePort}-${port.Type}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        
         if (port.PublicPort) {
           ports.push({
             hostPort: port.PublicPort,

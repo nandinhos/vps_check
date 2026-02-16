@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { DiskUsage } from '@/domain/entities';
@@ -11,6 +12,27 @@ interface DiskUsageChartProps {
 const COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6', '#ec4899', '#64748b'];
 
 export function DiskUsageChart({ data }: DiskUsageChartProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <Card className="col-span-2">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Uso de Disco</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[200px] flex items-center justify-center text-muted-foreground text-sm">
+            Carregando gráfico...
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const chartData = data
     .slice(0, 8)
     .map(item => ({

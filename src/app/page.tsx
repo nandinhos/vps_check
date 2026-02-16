@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, 
   Container as ContainerIcon, 
@@ -31,16 +31,20 @@ import { cn, formatSize } from '@/lib/utils';
 
 type TabType = 'overview' | 'containers' | 'images' | 'volumes';
 
-const getInitialTab = (): TabType => {
-  if (typeof window === 'undefined') return 'overview';
-  return (localStorage.getItem('activeTab') as TabType) || 'overview';
-};
-
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState<TabType>(getInitialTab);
+  const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [expandedPath, setExpandedPath] = useState<string | null>(null);
   const [exploredData, setExploredData] = useState<{ path: string; size: number; formattedSize: string }[]>([]);
   const [exploring, setExploring] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    const savedTab = localStorage.getItem('activeTab') as TabType;
+    if (savedTab && ['overview', 'containers', 'images', 'volumes'].includes(savedTab)) {
+      setActiveTab(savedTab);
+    }
+  }, []);
 
   const { data: diskScan, refetch: refetchDiskScan } = useDiskScan();
   const { data: health } = useHealth();
@@ -49,6 +53,17 @@ export default function Dashboard() {
   const { data: volumes } = useVolumes();
   const pruneCache = usePruneBuildCache();
   const { toast } = useToast();
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-pulse flex items-center gap-2">
+          <Activity className="w-5 h-5 text-primary" />
+          <span className="text-muted-foreground">Carregando...</span>
+        </div>
+      </div>
+    );
+  }
 
   const tabs = [
     { id: 'overview' as const, label: 'Visão Geral', icon: LayoutDashboard },
