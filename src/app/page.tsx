@@ -11,7 +11,8 @@ import {
   ChevronRight,
   Trash2,
   LogOut,
-  Folder
+  Folder,
+  Terminal as TerminalIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
@@ -21,14 +22,12 @@ import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DashboardStats } from '@/components/dashboard/DashboardStats';
 import { DiskUsageChart } from '@/components/dashboard/DiskUsageChart';
-import { ContainersTable } from '@/components/dashboard/ContainersTable';
 import { ContainersList } from '@/components/dashboard/ContainersList';
 import { ThemeToggle } from '@/components/theme/theme-toggle';
-import { ImagesTable } from '@/components/dashboard/ImagesTable';
 import { ImagesList } from '@/components/dashboard/ImagesList';
-import { VolumesTable } from '@/components/dashboard/VolumesTable';
 import { VolumesList } from '@/components/dashboard/VolumesList';
 import { ProjectsList } from '@/components/dashboard/ProjectsList';
+import { TerminalDialog } from '@/components/dashboard/TerminalDialog';
 import { 
   useDiskScan, 
   useHealth, 
@@ -50,11 +49,12 @@ export default function Dashboard() {
   const [exploredData, setExploredData] = useState<{ path: string; size: number; formattedSize: string }[]>([]);
   const [exploring, setExploring] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [showGlobalTerminal, setShowGlobalTerminal] = useState(false);
 
   useEffect(() => {
     setMounted(true);
     const savedTab = localStorage.getItem('activeTab') as TabType;
-    if (savedTab && ['overview', 'containers', 'images', 'volumes'].includes(savedTab)) {
+    if (savedTab && ['overview', 'containers', 'images', 'volumes', 'projects'].includes(savedTab)) {
       setActiveTab(savedTab);
     }
   }, []);
@@ -79,7 +79,6 @@ export default function Dashboard() {
     }
   };
 
-  // Ativa escuta de eventos em tempo real
   useDockerEvents();
 
   if (!mounted) {
@@ -140,7 +139,6 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header Minimalista */}
       <header className="border-b border-border bg-card/50">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
@@ -158,6 +156,15 @@ export default function Dashboard() {
             </div>
             <div className="flex items-center gap-2">
               <ThemeToggle />
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setShowGlobalTerminal(true)}
+                className="text-muted-foreground hover:text-primary"
+                title="Terminal Global VPS"
+              >
+                <TerminalIcon className="w-4 h-4" />
+              </Button>
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -182,7 +189,6 @@ export default function Dashboard() {
       </header>
 
       <div className="container mx-auto px-6 py-6">
-        {/* Navigation */}
         <div className="flex items-center gap-1 mb-8">
           {tabs.map(tab => (
             <button
@@ -209,13 +215,11 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* Overview Tab */}
         {activeTab === 'overview' && (
           <div className="space-y-6">
             <DashboardStats />
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-              {/* Disk Usage - Full Width on Mobile, 3 cols on Desktop */}
               <Card className="lg:col-span-3">
                 <CardContent className="p-5">
                   <div className="flex items-center justify-between mb-4">
@@ -278,7 +282,7 @@ export default function Dashboard() {
                                 <p className="text-xs text-muted-foreground">Pasta vazia</p>
                               ) : (
                                 exploredData.slice(0, 8).map((sub) => (
-                                  <div key={sub.path} className="flex justify-between text-xs">
+                                  <div key={sub.path} className="flex justify-between text-xs group">
                                     <span className="text-muted-foreground">{sub.path.split('/').pop()}</span>
                                     <span className="text-muted-foreground font-mono">{sub.formattedSize}</span>
                                   </div>
@@ -301,7 +305,6 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
 
-              {/* Chart */}
               {diskScan && (
                 <div className="lg:col-span-1">
                   <DiskUsageChart data={diskScan} />
@@ -311,18 +314,18 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Containers Tab */}
         {activeTab === 'containers' && <ContainersList />}
-
-        {/* Projects Tab */}
         {activeTab === 'projects' && <ProjectsList />}
-
-        {/* Images Tab */}
         {activeTab === 'images' && <ImagesList />}
-
-        {/* Volumes Tab */}
         {activeTab === 'volumes' && <VolumesList />}
       </div>
+
+      <TerminalDialog
+        containerId="host"
+        containerName="VPS Host (Root)"
+        open={showGlobalTerminal}
+        onOpenChange={setShowGlobalTerminal}
+      />
     </div>
   );
 }

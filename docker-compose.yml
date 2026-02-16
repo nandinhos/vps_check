@@ -10,7 +10,7 @@ services:
     volumes:
       - vps-data:/app/data
       - /var/run/docker.sock:/var/run/docker.sock
-      - /:/hostfs:ro
+      - /:/hostfs:rw
     restart: always
     environment:
       - PORT=3000

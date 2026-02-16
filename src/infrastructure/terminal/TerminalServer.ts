@@ -1,4 +1,5 @@
 import { WebSocketServer, WebSocket } from 'ws';
+import { spawn } from 'child_process';
 import { getDockerClient } from '../docker/DockerClient';
 import { verifyToken } from '@/shared/auth';
 import { logger } from '@/shared/logger';
@@ -19,72 +20,74 @@ export class TerminalServer {
       const token = url.searchParams.get('token');
       const containerId = url.searchParams.get('containerId');
 
-      // 1. Validação de Segurança
       if (!token || !containerId) {
         ws.close(1008, 'Token ou ContainerId ausente');
         return;
       }
 
-      const payload = await verifyToken(token);
+      const payload = await verifyToken(token === 'session' ? req.headers.cookie?.split('auth_token=')[1]?.split(';')[0] : token);
       if (!payload || payload.role !== 'ADMIN') {
-        ws.close(1008, 'Não autorizado: Apenas Super Admin');
+        ws.close(1008, 'Não autorizado');
         return;
       }
 
       try {
-        const docker = getDockerClient();
-        const container = docker.getContainer(containerId);
+        if (containerId === 'host') {
+          // Terminal Direto no Container do Gerenciador (Acesso à VPS via /hostfs)
+          const shell = spawn('/bin/sh', ['-i'], {
+            env: { ...process.env, TERM: 'xterm-256color' },
+            cols: 80,
+            rows: 24,
+          } as any);
 
-        // 2. Registro de Auditoria
-        await prisma.auditLog.create({
-          data: {
-            action: 'TERMINAL_OPEN' as any,
-            resource: containerId,
-            userId: payload.id as string,
-            details: JSON.stringify({ username: payload.username })
-          }
-        });
+          await prisma.auditLog.create({
+            data: {
+              action: 'TERMINAL_OPEN' as any,
+              resource: 'HOST_VPS',
+              userId: payload.id as string,
+              details: JSON.stringify({ username: payload.username, type: 'host-system' })
+            }
+          });
 
-        // 3. Iniciar Execução no Docker
-        const exec = await container.exec({
-          AttachStdin: true,
-          AttachStdout: true,
-          AttachStderr: true,
-          Tty: true,
-          Cmd: ['/bin/sh'], // Usamos sh por ser universal em imagens linux
-        });
+          shell.stdout.on('data', (data) => ws.send(data.toString()));
+          shell.stderr.on('data', (data) => ws.send(data.toString()));
+          ws.on('message', (msg) => shell.stdin.write(msg.toString()));
 
-        const stream = await exec.start({
-          hijack: true,
-          stdin: true,
-        });
+          ws.on('close', () => shell.kill());
+          shell.on('exit', () => ws.close());
+        } else {
+          // Terminal via Docker Exec (Containers individuais)
+          const docker = getDockerClient();
+          const container = docker.getContainer(containerId);
 
-        // 4. Ponte de Dados: Browser <-> Docker
-        // Do Docker para o Browser
-        stream.on('data', (chunk) => {
-          ws.send(chunk.toString());
-        });
+          await prisma.auditLog.create({
+            data: {
+              action: 'TERMINAL_OPEN' as any,
+              resource: containerId,
+              userId: payload.id as string,
+              details: JSON.stringify({ username: payload.username })
+            }
+          });
 
-        // Do Browser para o Docker
-        ws.on('message', (data) => {
-          stream.write(data.toString());
-        });
+          const exec = await container.exec({
+            AttachStdin: true,
+            AttachStdout: true,
+            AttachStderr: true,
+            Tty: true,
+            Cmd: ['/bin/sh'],
+          });
 
-        ws.on('close', () => {
-          stream.end();
-          logger.info(`Terminal fechado para container: ${containerId}`);
-        });
+          const stream = await exec.start({ hijack: true, stdin: true });
 
-        stream.on('end', () => {
-          ws.close();
-        });
-
+          stream.on('data', (chunk) => ws.send(chunk.toString()));
+          ws.on('message', (data) => stream.write(data.toString()));
+          ws.on('close', () => stream.end());
+          stream.on('end', () => ws.close());
+        }
       } catch (err) {
-        logger.error('Erro ao iniciar terminal docker', err);
-        ws.close(1011, 'Erro ao conectar ao container');
+        logger.error('Erro no Terminal Server', err);
+        ws.close(1011, 'Erro interno');
       }
     });
-
-    logger.info('Terminal WebSocket Server inicializado na rota /api/terminal');
   }
 }
