@@ -91,3 +91,31 @@ model AuditLog {
   @@index([action])
   @@index([resource])
 }
+
+model Alert {
+  id          String   @id @default(uuid())
+  type        String   // Ex: CONTAINER_DIE, DISK_FULL, HIGH_CPU
+  severity    String   // Ex: CRITICAL, WARNING, INFO
+  message     String
+  resourceId  String?
+  resolved    Boolean  @default(false)
+  metadata    String?  // JSON string
+  createdAt   DateTime @default(now())
+  resolvedAt  DateTime?
+
+  @@index([createdAt])
+  @@index([type])
+  @@index([severity])
+  @@index([resolved])
+}
+
+model ContainerMetric {
+  id          String   @id @default(uuid())
+  containerId String
+  cpuUsage    Float
+  memoryUsage BigInt
+  timestamp   DateTime @default(now())
+
+  @@index([containerId])
+  @@index([timestamp])
+}

@@ -1,8 +1,14 @@
 import { NextRequest } from 'next/server';
 import { getDockerClient } from '@/infrastructure/docker/DockerClient';
+import { prisma } from '@/infrastructure/database';
+import { NotificationService } from '@/infrastructure/notifications/NotificationService';
+import { MetricCollector } from '@/infrastructure/system/MetricCollector';
 import { logger } from '@/shared/logger';
 
 export const dynamic = 'force-dynamic';
+
+// Inicializa o coletor uma única vez
+MetricCollector.start();
 
 export async function GET(req: NextRequest) {
   const encoder = new TextEncoder();
@@ -22,10 +28,33 @@ export async function GET(req: NextRequest) {
           filters: { type: ['container', 'image', 'volume'] }
         });
 
-        dockerStream.on('data', (chunk) => {
+        dockerStream.on('data', async (chunk) => {
           try {
             const event = JSON.parse(chunk.toString());
             sendEvent(event);
+            
+            // Lógica de Alertas
+            if (event.Type === 'container' && (event.Action === 'die' || event.Action === 'oom')) {
+              const exitCode = event.Actor.Attributes.exitCode;
+              if (exitCode !== '0' || event.Action === 'oom') {
+                const containerName = event.Actor.Attributes.name || event.id;
+                await prisma.alert.create({
+                  data: {
+                    type: event.Action === 'oom' ? 'CONTAINER_OOM' : 'CONTAINER_DIE',
+                    severity: 'CRITICAL',
+                    message: `Container ${containerName} parou inesperadamente (Exit Code: ${exitCode})`,
+                    resourceId: event.id,
+                    metadata: JSON.stringify(event),
+                  }
+                }).catch(err => logger.error('Erro ao salvar alerta', err));
+
+                await NotificationService.notify({
+                  title: '🚨 Container Parou',
+                  message: `O container ${containerName} parou inesperadamente.\nID: ${event.id.substring(0, 12)}\nExit Code: ${exitCode}`,
+                  severity: 'CRITICAL'
+                });
+              }
+            }
           } catch (e) {
             // Ignora chunks malformados
           }

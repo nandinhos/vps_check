@@ -40,6 +40,18 @@ const api = {
     return res.json();
   },
 
+  async getContainerStats(id: string): Promise<{ cpuUsage: number; memoryUsage: number; memoryLimit: number }> {
+    const res = await fetch(`/api/containers/${id}/stats`);
+    if (!res.ok) throw new Error('Failed to fetch stats');
+    return res.json();
+  },
+
+  async getContainerMetrics(id: string, limit: number = 20): Promise<{ cpu: number; memory: number; time: string }[]> {
+    const res = await fetch(`/api/containers/${id}/metrics?limit=${limit}`);
+    if (!res.ok) throw new Error('Failed to fetch metrics');
+    return res.json();
+  },
+
   async deleteImage(id: string) {
     const res = await fetch(`/api/images/${encodeURIComponent(id)}`, { method: 'DELETE' });
     if (!res.ok) throw new Error('Failed to delete image');
@@ -221,6 +233,24 @@ export function useContainerLogs(id: string, tail: number = 200, enabled: boolea
     queryFn: () => api.getContainerLogs(id, tail),
     enabled,
     refetchInterval: 5000,
+  });
+}
+
+export function useContainerStats(id: string, enabled: boolean = true) {
+  return useQuery({
+    queryKey: ['container-stats', id],
+    queryFn: () => api.getContainerStats(id),
+    enabled,
+    refetchInterval: 5000, // Atualiza métricas a cada 5 segundos
+  });
+}
+
+export function useContainerMetrics(id: string, enabled: boolean = true) {
+  return useQuery({
+    queryKey: ['container-metrics', id],
+    queryFn: () => api.getContainerMetrics(id),
+    enabled,
+    refetchInterval: 60000, // Atualiza histórico a cada minuto
   });
 }
 

@@ -8,4 +8,5 @@ export interface IContainerRepository {
   upsert(input: ContainerCreateInput): Promise<Container>;
   delete(id: string): Promise<void>;
   getLogs(id: string, tail?: number): Promise<string>;
+  getStats(id: string): Promise<{ cpuUsage: number; memoryUsage: number; memoryLimit: number }>;
 }

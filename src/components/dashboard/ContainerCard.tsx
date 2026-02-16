@@ -34,16 +34,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { useClearContainerLogs, useManageContainer } from '@/lib/hooks/use-api';
+import { useClearContainerLogs, useManageContainer, useContainerStats } from '@/lib/hooks/use-api';
 import { useErrorStore } from '@/lib/hooks/use-error-store';
 import { useToast } from '@/components/ui/toast';
 import { useHostAddress } from '@/lib/utils/network';
 import { categorizePorts } from '@/lib/utils/ports';
 import { PortLink } from '@/components/ui/port-link';
+import { Progress } from '@/components/ui/progress';
 import type { Container } from '@/domain/entities';
-import { formatSize } from '@/lib/utils';
-import { Globe, Database, Wrench, Terminal } from 'lucide-react';
+import { formatSize, cn } from '@/lib/utils';
+import { Globe, Database, Wrench, Terminal, Cpu, MemoryStick } from 'lucide-react';
 import { LogViewerDialog } from './LogViewerDialog';
+import { ResourceSparkline } from './ResourceSparkline';
 
 interface ContainerCardProps {
   container: Container;
@@ -57,6 +59,7 @@ export function ContainerCard({ container }: ContainerCardProps) {
   
   const clearLogs = useClearContainerLogs();
   const manageContainer = useManageContainer();
+  const { data: stats } = useContainerStats(container.id, container.state === 'running');
   const { addError, hasRecentErrors } = useErrorStore();
   const { toast } = useToast();
   const hostAddress = useHostAddress();
@@ -198,9 +201,41 @@ export function ContainerCard({ container }: ContainerCardProps) {
               )}
               <div>
                 <p className="font-medium">{container.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {isRunning ? 'Running' : container.state} • ID: {shortId}
-                </p>
+                <div className="flex items-center gap-3">
+                  <p className="text-xs text-muted-foreground">
+                    {isRunning ? 'Running' : container.state} • ID: {shortId}
+                  </p>
+                  {isRunning && stats && (
+                    <div className="flex items-center gap-3 ml-2 border-l border-border pl-3">
+                      <div className="flex items-center gap-1.5" title={`CPU: ${stats.cpuUsage}%`}>
+                        <Cpu className="h-3 w-3 text-muted-foreground" />
+                        <div className="w-12 h-1.5 bg-secondary rounded-full overflow-hidden">
+                          <div 
+                            className={cn(
+                              "h-full transition-all duration-500",
+                              stats.cpuUsage > 80 ? "bg-destructive" : stats.cpuUsage > 50 ? "bg-yellow-500" : "bg-primary"
+                            )}
+                            style={{ width: `${Math.min(stats.cpuUsage, 100)}%` }}
+                          />
+                        </div>
+                        <span className="text-[10px] font-mono text-muted-foreground w-7">{Math.round(stats.cpuUsage)}%</span>
+                      </div>
+                      <div className="flex items-center gap-1.5" title={`RAM: ${formatSize(stats.memoryUsage)}`}>
+                        <MemoryStick className="h-3 w-3 text-muted-foreground" />
+                        <div className="w-12 h-1.5 bg-secondary rounded-full overflow-hidden">
+                          <div 
+                            className={cn(
+                              "h-full transition-all duration-500",
+                              (stats.memoryUsage / stats.memoryLimit) > 0.8 ? "bg-destructive" : (stats.memoryUsage / stats.memoryLimit) > 0.5 ? "bg-yellow-500" : "bg-blue-500"
+                            )}
+                            style={{ width: `${Math.min((stats.memoryUsage / stats.memoryLimit) * 100, 100)}%` }}
+                          />
+                        </div>
+                        <span className="text-[10px] font-mono text-muted-foreground">{formatSize(stats.memoryUsage)}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -309,12 +344,30 @@ export function ContainerCard({ container }: ContainerCardProps) {
           <div className="px-4 pb-4 border-t border-border">
             <div className="grid grid-cols-3 gap-4 mt-4">
               <div className="flex items-start gap-2">
-                <ContainerIcon className="h-4 w-4 mt-0.5 text-muted-foreground" />
-                <div>
-                  <p className="text-xs text-muted-foreground">Imagem</p>
-                  <p className="text-sm font-medium truncate max-w-[150px]" title={container.image}>
-                    {container.image}
-                  </p>
+                <Cpu className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-muted-foreground">CPU</p>
+                  <p className="text-sm font-medium">{stats?.cpuUsage || 0}%</p>
+                  <ResourceSparkline 
+                    containerId={container.id} 
+                    type="cpu" 
+                    color="#22c55e" 
+                    isRunning={isRunning} 
+                  />
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-2">
+                <MemoryStick className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-muted-foreground">Memória</p>
+                  <p className="text-sm font-medium">{formatSize(stats?.memoryUsage || 0)}</p>
+                  <ResourceSparkline 
+                    containerId={container.id} 
+                    type="memory" 
+                    color="#3b82f6" 
+                    isRunning={isRunning} 
+                  />
                 </div>
               </div>
               

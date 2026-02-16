@@ -136,22 +136,38 @@ export class DockerContainerRepository implements IContainerRepository {
         follow: false,
       });
 
-      // O Docker retorna os logs multiplexados (com headers de 8 bytes). 
-      // O dockerode não desmultiplexa automaticamente no método .logs() quando retorna Buffer.
-      // Vamos converter para string e limpar caracteres de controle se necessário.
-      // Uma forma simples de ler é tratar como string e remover os headers de 8 bytes que aparecem.
-      
       const logString = logs.toString('utf8');
-      
-      // Regex para remover os headers do protocolo de stream do Docker (8 bytes iniciais de cada chunk)
-      // O header é [type, 0, 0, 0, size_3, size_2, size_1, size_0]
-      // Aqui vamos apenas limpar caracteres não imprimíveis no início das linhas para simplificar.
       const cleanedLogs = logString.replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/g, '');
       
       return cleanedLogs;
     } catch (error) {
       logger.error('Erro ao buscar logs do container via SDK', { id, error });
       return 'Não foi possível recuperar os logs do container via SDK.';
+    }
+  }
+
+  async getStats(id: string): Promise<{ cpuUsage: number; memoryUsage: number; memoryLimit: number }> {
+    const docker = getDockerClient();
+    const container = docker.getContainer(id);
+
+    try {
+      const stats = await container.stats({ stream: false });
+
+      const cpuDelta = stats.cpu_stats.cpu_usage.total_usage - stats.precpu_stats.cpu_usage.total_usage;
+      const systemDelta = stats.cpu_stats.system_cpu_usage - stats.precpu_stats.system_cpu_usage;
+      const cpuUsage = systemDelta > 0 ? (cpuDelta / systemDelta) * stats.cpu_stats.online_cpus * 100 : 0;
+
+      const memoryUsage = stats.memory_stats.usage || 0;
+      const memoryLimit = stats.memory_stats.limit || 0;
+
+      return {
+        cpuUsage: parseFloat(cpuUsage.toFixed(2)),
+        memoryUsage,
+        memoryLimit
+      };
+    } catch (error) {
+      logger.error('Erro ao buscar stats do container', { id, error });
+      return { cpuUsage: 0, memoryUsage: 0, memoryLimit: 0 };
     }
   }
 }

@@ -16,6 +16,9 @@ export interface Container {
   logSize: number;
   ports?: PortMapping[];
   lastSeenAt?: Date;
+  cpuUsage?: number;
+  memoryUsage?: number;
+  memoryLimit?: number;
 }
 
 export interface ContainerCreateInput {
