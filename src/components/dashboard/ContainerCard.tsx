@@ -46,6 +46,7 @@ import { formatSize, cn } from '@/lib/utils';
 import { Globe, Database, Wrench, Terminal, Cpu, MemoryStick } from 'lucide-react';
 import { LogViewerDialog } from './LogViewerDialog';
 import { ResourceSparkline } from './ResourceSparkline';
+import { TerminalDialog } from './TerminalDialog';
 
 interface ContainerCardProps {
   container: Container;
@@ -56,6 +57,7 @@ export function ContainerCard({ container }: ContainerCardProps) {
   const [loading, setLoading] = useState<string | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showLogs, setShowLogs] = useState(false);
+  const [showTerminal, setShowTerminal] = useState(false);
   
   const clearLogs = useClearContainerLogs();
   const manageContainer = useManageContainer();
@@ -323,6 +325,12 @@ export function ContainerCard({ container }: ContainerCardProps) {
                   <Terminal className="mr-2 h-4 w-4 text-primary" />
                   Ver Logs
                 </DropdownMenuItem>
+                {isRunning && (
+                  <DropdownMenuItem onClick={() => setShowTerminal(true)}>
+                    <Terminal className="mr-2 h-4 w-4 text-green-500" />
+                    Abrir Console
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={handleClearLogs} disabled={loading === 'logs'}>
                   <Power className="mr-2 h-4 w-4 text-yellow-500" />
                   {loading === 'logs' ? 'Limpando...' : 'Limpar Logs'}
@@ -508,6 +516,13 @@ export function ContainerCard({ container }: ContainerCardProps) {
           </div>
         )}
       </Card>
+
+      <TerminalDialog
+        containerId={container.id}
+        containerName={container.name}
+        open={showTerminal}
+        onOpenChange={setShowTerminal}
+      />
 
       <LogViewerDialog
         containerId={container.id}

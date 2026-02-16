@@ -6,6 +6,7 @@ services:
     user: "root"
     ports:
       - "45000:3000"
+      - "45001:3001"
     volumes:
       - vps-data:/app/data
       - /var/run/docker.sock:/var/run/docker.sock

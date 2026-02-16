@@ -26,6 +26,12 @@ const api = {
     if (!res.ok) throw new Error('Failed to fetch projects');
     return res.json();
   },
+
+  async getProjectLogs(path: string, tail: number = 200): Promise<{ logs: string }> {
+    const res = await fetch(`/api/projects/logs?path=${encodeURIComponent(path)}&tail=${tail}`);
+    if (!res.ok) throw new Error('Failed to fetch project logs');
+    return res.json();
+  },
   
   async getDiskScan(): Promise<DiskUsage[]> {
     const res = await fetch('/api/system/scan');
@@ -160,6 +166,15 @@ export function useProjects() {
     queryKey: ['projects'],
     queryFn: api.getProjects,
     staleTime: 30000,
+  });
+}
+
+export function useProjectLogs(path: string, tail: number = 200, enabled: boolean = false) {
+  return useQuery({
+    queryKey: ['project-logs', path, tail],
+    queryFn: () => api.getProjectLogs(path, tail),
+    enabled,
+    refetchInterval: 5000,
   });
 }
 

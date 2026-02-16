@@ -1,9 +1,11 @@
 import { DockerContainerRepository } from '@/infrastructure/docker';
 import { prisma } from '@/infrastructure/database';
 import { logger } from '@/shared/logger';
+import { TerminalServer } from '../terminal/TerminalServer';
 
 export class MetricCollector {
   private static interval: NodeJS.Timeout | null = null;
+  private static terminalServer: TerminalServer | null = null;
   private static containerRepository = new DockerContainerRepository();
 
   static start(intervalMs: number = 60000) { // Padrão: 1 minuto
@@ -11,6 +13,13 @@ export class MetricCollector {
 
     logger.info('Iniciando coletor de métricas em background...');
     
+    // Inicia o servidor de terminal na porta 3001
+    try {
+      this.terminalServer = new TerminalServer(3001);
+    } catch (err) {
+      logger.error('Falha ao iniciar Terminal Server', err);
+    }
+
     this.interval = setInterval(async () => {
       try {
         const containers = await this.containerRepository.findAll();

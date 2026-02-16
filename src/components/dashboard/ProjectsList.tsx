@@ -16,8 +16,10 @@ import {
   Download, 
   ExternalLink,
   Loader2,
-  FileCode
+  FileCode,
+  FileText
 } from 'lucide-react';
+import { ProjectLogViewerDialog } from './ProjectLogViewerDialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,6 +46,7 @@ export function ProjectsList() {
   const manageProject = useManageProject();
   const { toast } = useToast();
   const [loadingPath, setLoadingPath] = useState<string | null>(null);
+  const [showLogsPath, setShowLogsPath] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<{ path: string, name: string, action: 'down' | 'restart' } | null>(null);
 
   if (isLoading) return <ProjectSkeleton />;
@@ -172,6 +175,15 @@ export function ProjectsList() {
                 </Button>
                 <Button 
                   size="sm" 
+                  variant="outline" 
+                  className="h-8 flex-1" 
+                  onClick={() => setShowLogsPath(project.path)}
+                >
+                  <FileText className="w-3 h-3 mr-1" />
+                  Logs
+                </Button>
+                <Button 
+                  size="sm" 
                   variant="destructive" 
                   className="h-8 w-10 flex-none" 
                   onClick={() => handleAction(project.path, 'down')}
@@ -205,6 +217,15 @@ export function ProjectsList() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {showLogsPath && (
+        <ProjectLogViewerDialog
+          projectPath={showLogsPath}
+          projectName={projects.find(p => p.path === showLogsPath)?.name || ''}
+          open={!!showLogsPath}
+          onOpenChange={(open) => !open && setShowLogsPath(null)}
+        />
+      )}
     </div>
   );
 }

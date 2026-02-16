@@ -83,6 +83,21 @@ export class ProjectService {
     }
   }
 
+  static async getProjectLogs(projectPath: string, tail: number = 200): Promise<string> {
+    const hostPath = `/hostfs${projectPath}`;
+    const projectDir = path.dirname(hostPath);
+
+    try {
+      // --no-color para facilitar a leitura no componente de log simples
+      // Se quisermos cores, precisaríamos tratar ANSI no frontend (o xterm já faz isso, mas aqui usamos o log viewer de texto)
+      const { stdout, stderr } = await execPromise(`cd ${projectDir} && docker compose logs --tail ${tail} --no-color`);
+      return stdout + stderr;
+    } catch (error) {
+      logger.error(`Erro ao buscar logs do projeto em ${projectDir}`, error);
+      return 'Não foi possível recuperar os logs do projeto Compose.';
+    }
+  }
+
   static async getProjectConfig(projectPath: string): Promise<string> {
     const hostPath = `/hostfs${projectPath}`;
     try {

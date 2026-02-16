@@ -13,7 +13,8 @@ export type AuditAction =
   | 'COMPOSE_UP'
   | 'COMPOSE_DOWN'
   | 'COMPOSE_RESTART'
-  | 'COMPOSE_PULL';
+  | 'COMPOSE_PULL'
+  | 'TERMINAL_OPEN';
 
 export interface AuditLog {
   id: string;
